@@ -1,0 +1,473 @@
+-- phpMyAdmin SQL Dump
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
+--
+-- Host: 127.0.0.1
+-- Generation Time: Mar 07, 2025 at 04:12 AM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.2.12
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Database: `kpi_db`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `counter`
+--
+
+CREATE TABLE `counter` (
+  `id` int(11) NOT NULL,
+  `button_name` varchar(255) NOT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `counter`
+--
+
+INSERT INTO `counter` (`id`, `button_name`, `timestamp`) VALUES
+(1, 'Admin', '2025-03-05 07:44:36'),
+(2, 'Admin', '2025-03-05 07:44:37'),
+(3, 'Admin', '2025-03-05 08:20:49'),
+(4, 'Admin', '2025-03-05 08:20:49'),
+(5, 'Admin', '2025-03-05 08:20:49'),
+(6, 'Admin', '2025-03-05 08:20:49'),
+(7, 'Admin', '2025-03-05 08:20:49'),
+(8, 'Admin', '2025-03-06 00:24:58'),
+(9, 'Technical', '2025-03-06 00:24:59'),
+(10, 'Retail Inquiry', '2025-03-06 00:25:00'),
+(11, 'Printing Avenue', '2025-03-06 00:25:02'),
+(12, 'Retail Inquiry', '2025-03-06 01:04:21'),
+(13, 'Retail Inquiry', '2025-03-06 01:04:21'),
+(14, 'Retail Inquiry', '2025-03-06 01:04:21'),
+(15, 'Retail Inquiry', '2025-03-06 01:04:21'),
+(16, 'Printing Avenue', '2025-03-06 01:04:23'),
+(17, 'Printing Avenue', '2025-03-06 01:04:23'),
+(18, 'Technical', '2025-03-06 01:04:24'),
+(19, 'Technical', '2025-03-06 01:04:24'),
+(20, 'Admin', '2025-03-06 01:04:24'),
+(21, 'Admin', '2025-03-06 01:04:24'),
+(22, 'Technical', '2025-03-06 01:12:14'),
+(23, 'Technical', '2024-12-07 10:44:11'),
+(24, 'Printing Avenue', '2024-11-27 09:38:49'),
+(25, 'Admin', '2024-10-22 21:12:50'),
+(26, 'Retail Inquiry', '2024-10-15 09:59:38'),
+(27, 'Printing Avenue', '2025-02-07 20:17:42'),
+(28, 'Printing Avenue', '2025-01-19 08:55:39'),
+(29, 'Admin', '2024-12-13 18:05:40'),
+(30, 'Admin', '2025-01-01 09:07:48'),
+(31, 'Printing Avenue', '2024-10-22 06:54:12'),
+(32, 'Retail Inquiry', '2025-01-25 09:37:25'),
+(33, 'Technical', '2025-03-05 08:38:27'),
+(34, 'Technical', '2024-12-10 21:14:58'),
+(35, 'Admin', '2024-12-06 13:00:55'),
+(36, 'Retail Inquiry', '2025-01-10 04:54:07'),
+(37, 'Admin', '2024-10-05 00:03:42'),
+(38, 'Printing Avenue', '2024-12-27 12:52:41'),
+(39, 'Admin', '2024-11-09 18:12:44'),
+(40, 'Printing Avenue', '2024-09-18 17:17:07'),
+(41, 'Printing Avenue', '2025-02-17 13:02:18'),
+(42, 'Admin', '2024-09-09 06:52:43'),
+(43, 'Admin', '2024-10-06 19:14:37'),
+(44, 'Admin', '2024-10-01 06:46:39'),
+(45, 'Printing Avenue', '2024-11-30 21:14:28'),
+(46, 'Technical', '2025-02-21 00:33:09'),
+(47, 'Technical', '2025-01-09 15:13:37'),
+(48, 'Admin', '2025-01-07 15:01:31'),
+(49, 'Retail Inquiry', '2024-10-05 07:39:38'),
+(50, 'Printing Avenue', '2024-12-31 18:29:32'),
+(51, 'Admin', '2024-11-27 20:17:50'),
+(52, 'Admin', '2024-12-28 21:11:29'),
+(53, 'Retail Inquiry', '2024-09-05 05:55:39'),
+(54, 'Technical', '2025-03-01 02:52:48'),
+(55, 'Admin', '2024-11-10 18:15:36'),
+(56, 'Admin', '2024-10-10 05:26:18'),
+(57, 'Retail Inquiry', '2024-11-20 04:42:28'),
+(58, 'Retail Inquiry', '2024-11-20 12:06:45'),
+(59, 'Retail Inquiry', '2024-11-16 18:50:50'),
+(61, 'Retail Inquiry', '2024-09-19 01:09:31'),
+(62, 'Technical', '2025-02-17 17:36:00'),
+(63, 'Technical', '2024-10-28 20:42:47'),
+(64, 'Printing Avenue', '2025-02-10 11:48:59'),
+(65, 'Admin', '2024-11-03 17:26:00'),
+(66, 'Retail Inquiry', '2024-12-17 18:46:07'),
+(67, 'Technical', '2025-02-07 18:40:45'),
+(68, 'Technical', '2025-02-03 00:35:44'),
+(69, 'Admin', '2025-01-28 20:55:11'),
+(70, 'Admin', '2024-11-28 23:35:35'),
+(71, 'Admin', '2025-01-17 07:10:26'),
+(72, 'Retail Inquiry', '2024-10-22 14:50:53'),
+(73, 'Admin', '2024-12-25 23:51:56'),
+(74, 'Printing Avenue', '2024-10-30 10:33:33'),
+(75, 'Admin', '2025-02-14 08:36:58'),
+(76, 'Technical', '2025-01-26 20:21:27'),
+(77, 'Technical', '2024-12-12 16:50:31'),
+(78, 'Printing Avenue', '2024-11-12 18:10:14'),
+(79, 'Retail Inquiry', '2024-09-04 20:59:15'),
+(80, 'Retail Inquiry', '2025-02-15 01:30:02'),
+(81, 'Technical', '2024-12-23 17:49:44'),
+(82, 'Technical', '2024-09-15 17:36:45'),
+(83, 'Technical', '2024-11-13 04:17:23'),
+(84, 'Printing Avenue', '2024-12-16 22:46:15'),
+(85, 'Admin', '2024-11-23 16:36:09'),
+(86, 'Printing Avenue', '2025-02-15 17:15:01'),
+(87, 'Admin', '2024-09-09 10:25:39'),
+(88, 'Printing Avenue', '2024-10-11 00:20:51'),
+(89, 'Printing Avenue', '2024-12-20 15:01:01'),
+(90, 'Technical', '2024-10-31 04:40:02'),
+(91, 'Technical', '2024-10-24 12:10:28'),
+(92, 'Admin', '2025-01-01 05:34:55'),
+(93, 'Technical', '2024-10-04 01:26:02'),
+(94, 'Retail Inquiry', '2025-02-07 08:28:06'),
+(95, 'Retail Inquiry', '2025-01-16 09:12:21'),
+(96, 'Technical', '2024-09-17 13:33:31'),
+(97, 'Retail Inquiry', '2024-11-08 05:56:31'),
+(98, 'Admin', '2024-12-11 21:24:28'),
+(99, 'Admin', '2024-09-20 19:30:44'),
+(100, 'Admin', '2025-01-08 15:38:34'),
+(101, 'Admin', '2024-11-15 06:45:54'),
+(102, 'Printing Avenue', '2025-01-09 04:44:25'),
+(103, 'Printing Avenue', '2024-11-30 14:33:28'),
+(104, 'Printing Avenue', '2025-02-23 12:35:18'),
+(105, 'Retail Inquiry', '2024-11-05 04:44:17'),
+(106, 'Technical', '2024-10-25 11:12:07'),
+(107, 'Admin', '2024-12-05 01:06:26'),
+(108, 'Printing Avenue', '2024-09-17 06:24:02'),
+(109, 'Retail Inquiry', '2025-02-02 05:15:55'),
+(110, 'Admin', '2024-10-13 13:48:35'),
+(111, 'Printing Avenue', '2025-02-17 09:01:32'),
+(112, 'Technical', '2025-01-01 06:08:37'),
+(113, 'Printing Avenue', '2024-09-02 05:31:51'),
+(114, 'Admin', '2024-11-01 08:59:11'),
+(115, 'Printing Avenue', '2024-12-05 06:10:01'),
+(116, 'Technical', '2024-09-03 18:17:44'),
+(117, 'Technical', '2025-02-19 07:54:23'),
+(118, 'Admin', '2025-01-06 14:59:58'),
+(119, 'Printing Avenue', '2024-10-03 06:07:46'),
+(120, 'Admin', '2024-10-31 03:17:51'),
+(121, 'Admin', '2025-01-22 02:47:16'),
+(122, 'Admin', '2025-01-09 19:39:49'),
+(123, 'Technical', '2025-01-29 10:48:41'),
+(124, 'Retail Inquiry', '2024-09-14 12:15:45'),
+(125, 'Technical', '2025-01-16 08:04:58'),
+(126, 'Printing Avenue', '2024-09-13 06:52:32'),
+(127, 'Admin', '2025-01-12 11:03:47'),
+(128, 'Admin', '2024-09-12 03:52:50'),
+(129, 'Printing Avenue', '2024-09-02 06:52:18'),
+(130, 'Printing Avenue', '2024-09-05 11:57:41'),
+(131, 'Technical', '2025-02-07 00:02:08'),
+(132, 'Admin', '2024-12-31 18:36:46'),
+(133, 'Admin', '2025-01-10 05:34:03'),
+(134, 'Printing Avenue', '2024-11-29 13:58:58'),
+(135, 'Admin', '2024-12-11 13:16:24'),
+(136, 'Printing Avenue', '2025-01-06 23:20:49'),
+(137, 'Technical', '2024-09-15 00:10:32'),
+(138, 'Technical', '2025-01-09 20:50:27'),
+(139, 'Admin', '2024-09-29 03:45:08'),
+(140, 'Retail Inquiry', '2025-02-09 21:12:23'),
+(141, 'Admin', '2024-09-13 23:46:11'),
+(142, 'Admin', '2025-01-08 15:53:41'),
+(143, 'Retail Inquiry', '2024-11-27 11:21:30'),
+(144, 'Admin', '2024-12-04 20:01:37'),
+(145, 'Printing Avenue', '2025-01-12 08:50:47'),
+(146, 'Printing Avenue', '2024-12-02 12:04:07'),
+(147, 'Retail Inquiry', '2025-03-03 04:13:14'),
+(148, 'Printing Avenue', '2024-11-13 07:27:01'),
+(149, 'Retail Inquiry', '2025-02-25 06:27:09'),
+(150, 'Printing Avenue', '2024-11-08 16:24:43'),
+(151, 'Admin', '2025-01-02 16:08:09'),
+(152, 'Admin', '2024-09-12 03:56:47'),
+(153, 'Printing Avenue', '2024-12-24 11:11:05'),
+(154, 'Technical', '2025-01-15 04:59:26'),
+(155, 'Technical', '2024-11-02 09:40:40'),
+(156, 'Technical', '2024-12-14 17:00:43'),
+(157, 'Printing Avenue', '2025-01-07 12:00:45'),
+(158, 'Technical', '2025-01-15 18:16:06'),
+(159, 'Retail Inquiry', '2024-12-14 01:49:33'),
+(160, 'Printing Avenue', '2025-03-04 07:02:29'),
+(161, 'Admin', '2024-12-25 02:00:51'),
+(162, 'Retail Inquiry', '2025-01-19 14:44:41'),
+(163, 'Retail Inquiry', '2025-02-28 09:26:02'),
+(164, 'Admin', '2025-02-04 06:06:04'),
+(165, 'Admin', '2025-03-01 02:32:49'),
+(166, 'Admin', '2025-03-04 16:52:58'),
+(167, 'Admin', '2025-02-23 14:48:28'),
+(168, 'Retail Inquiry', '2025-02-21 00:50:03'),
+(169, 'Retail Inquiry', '2025-02-16 14:22:22'),
+(170, 'Technical', '2024-12-20 12:43:12'),
+(171, 'Admin', '2024-12-26 10:29:32'),
+(172, 'Retail Inquiry', '2025-01-04 03:29:43'),
+(173, 'Admin', '2024-11-20 14:00:46'),
+(174, 'Retail Inquiry', '2024-12-30 16:13:11'),
+(175, 'Retail Inquiry', '2024-11-22 23:40:51'),
+(176, 'Technical', '2025-02-05 14:15:19'),
+(177, 'Technical', '2025-01-19 18:59:14'),
+(178, 'Retail Inquiry', '2024-12-22 01:23:27'),
+(179, 'Technical', '2024-11-07 12:30:24'),
+(180, 'Admin', '2024-12-07 03:15:35'),
+(181, 'Admin', '2024-11-08 22:20:15'),
+(182, 'Printing Avenue', '2024-12-09 12:17:08'),
+(183, 'Retail Inquiry', '2024-09-30 03:13:09'),
+(184, 'Printing Avenue', '2024-11-05 08:50:51'),
+(185, 'Technical', '2025-01-08 00:32:24'),
+(186, 'Technical', '2024-10-11 19:27:08'),
+(187, 'Admin', '2024-10-08 08:50:56'),
+(188, 'Printing Avenue', '2024-11-25 21:19:38'),
+(189, 'Admin', '2024-09-25 16:53:54'),
+(190, 'Admin', '2024-10-28 15:06:52'),
+(191, 'Retail Inquiry', '2024-11-11 19:55:13'),
+(192, 'Admin', '2024-10-06 00:36:28'),
+(193, 'Technical', '2025-03-05 08:48:17'),
+(194, 'Retail Inquiry', '2025-01-22 18:47:00'),
+(195, 'Retail Inquiry', '2025-02-26 16:35:11'),
+(196, 'Retail Inquiry', '2024-09-23 06:46:17'),
+(197, 'Retail Inquiry', '2024-12-04 01:21:01'),
+(198, 'Retail Inquiry', '2024-09-25 04:17:35'),
+(199, 'Printing Avenue', '2024-10-12 21:15:26'),
+(200, 'Technical', '2024-12-07 07:11:24'),
+(201, 'Retail Inquiry', '2024-12-09 23:45:17'),
+(202, 'Printing Avenue', '2025-01-10 15:20:08'),
+(203, 'Technical', '2024-10-05 23:52:36'),
+(204, 'Technical', '2024-10-28 02:51:31'),
+(205, 'Admin', '2025-01-28 08:18:50'),
+(206, 'Retail Inquiry', '2025-02-22 06:46:40'),
+(207, 'Printing Avenue', '2025-01-14 08:32:04'),
+(208, 'Retail Inquiry', '2024-09-29 10:21:08'),
+(209, 'Printing Avenue', '2024-10-10 19:59:00'),
+(210, 'Technical', '2025-02-05 03:15:02'),
+(211, 'Admin', '2025-01-14 07:21:04'),
+(212, 'Admin', '2024-11-06 07:43:22'),
+(213, 'Admin', '2024-10-13 20:55:15'),
+(214, 'Admin', '2024-10-16 13:36:00'),
+(215, 'Printing Avenue', '2024-11-06 01:09:36'),
+(216, 'Retail Inquiry', '2025-01-29 14:33:58'),
+(217, 'Admin', '2024-10-08 04:22:02'),
+(218, 'Printing Avenue', '2024-12-28 19:00:32'),
+(219, 'Technical', '2024-12-02 15:16:13'),
+(220, 'Technical', '2025-02-07 17:28:13'),
+(221, 'Technical', '2024-11-05 09:59:20'),
+(222, 'Printing Avenue', '2025-02-27 17:36:58'),
+(223, 'Admin', '2025-02-26 08:47:34'),
+(224, 'Technical', '2024-09-12 03:49:11'),
+(225, 'Admin', '2024-12-29 00:36:07'),
+(226, 'Technical', '2024-10-28 20:44:09'),
+(227, 'Admin', '2025-01-31 21:45:25'),
+(228, 'Admin', '2024-12-04 19:42:46'),
+(229, 'Printing Avenue', '2025-01-23 15:06:52'),
+(230, 'Technical', '2024-12-31 15:10:45'),
+(231, 'Technical', '2024-11-29 09:45:38'),
+(232, 'Technical', '2025-02-07 22:33:30'),
+(233, 'Admin', '2025-02-06 03:17:06'),
+(234, 'Printing Avenue', '2024-09-23 04:57:28'),
+(235, 'Technical', '2024-10-07 15:10:19'),
+(236, 'Retail Inquiry', '2024-10-09 22:36:08'),
+(237, 'Printing Avenue', '2025-01-16 03:25:16'),
+(238, 'Technical', '2025-02-09 00:34:22'),
+(239, 'Admin', '2024-10-14 08:37:28'),
+(240, 'Technical', '2025-01-22 05:45:44'),
+(241, 'Admin', '2024-12-23 08:18:32'),
+(242, 'Retail Inquiry', '2024-12-08 04:37:38'),
+(243, 'Printing Avenue', '2024-10-27 10:25:02'),
+(244, 'Retail Inquiry', '2025-03-03 11:30:07'),
+(245, 'Admin', '2024-10-03 11:40:17'),
+(246, 'Technical', '2024-09-17 15:14:13'),
+(247, 'Admin', '2024-11-09 07:03:34'),
+(248, 'Technical', '2024-12-21 16:20:05'),
+(249, 'Technical', '2024-11-06 19:28:10'),
+(250, 'Retail Inquiry', '2025-01-08 11:08:13'),
+(251, 'Printing Avenue', '2025-01-01 02:36:36'),
+(252, 'Technical', '2025-03-01 17:26:39'),
+(253, 'Admin', '2025-01-21 00:25:04'),
+(254, 'Technical', '2024-09-11 05:21:57'),
+(255, 'Admin', '2025-01-20 11:09:30'),
+(256, 'Technical', '2025-01-02 06:44:09'),
+(257, 'Admin', '2024-12-05 13:04:27'),
+(258, 'Admin', '2024-12-26 09:08:50'),
+(259, 'Technical', '2024-10-09 05:42:31'),
+(260, 'Technical', '2024-09-13 05:51:57'),
+(261, 'Printing Avenue', '2024-10-13 21:45:55'),
+(262, 'Technical', '2024-12-15 09:12:36'),
+(263, 'Technical', '2025-01-29 07:34:28'),
+(264, 'Retail Inquiry', '2024-10-09 18:12:59'),
+(265, 'Technical', '2025-02-09 23:20:26'),
+(266, 'Technical', '2024-11-26 18:51:33'),
+(267, 'Technical', '2025-02-16 21:33:06'),
+(268, 'Admin', '2025-01-12 13:23:33'),
+(269, 'Printing Avenue', '2025-01-30 13:44:17'),
+(270, 'Technical', '2024-09-09 11:05:50'),
+(271, 'Technical', '2025-02-21 01:47:17'),
+(272, 'Technical', '2024-09-25 08:00:20'),
+(273, 'Retail Inquiry', '2024-12-01 21:24:03'),
+(274, 'Admin', '2025-03-06 05:18:00'),
+(275, 'Admin', '2025-03-06 05:18:01'),
+(276, 'Admin', '2025-03-06 05:18:01'),
+(277, 'Admin', '2025-03-06 05:18:01'),
+(278, 'Admin', '2025-03-06 05:18:01'),
+(279, 'Admin', '2025-03-06 05:18:03'),
+(280, 'Admin', '2025-03-06 05:18:03'),
+(281, 'Admin', '2025-03-06 05:18:04'),
+(282, 'Admin', '2025-03-06 05:18:04'),
+(283, 'Admin', '2025-03-06 05:18:05'),
+(284, 'Admin', '2025-03-06 05:18:05'),
+(285, 'Admin', '2025-03-06 05:18:05'),
+(286, 'Admin', '2025-03-06 05:18:05'),
+(287, 'Technical', '2025-03-06 05:18:08'),
+(288, 'Technical', '2025-03-06 05:18:08'),
+(289, 'Technical', '2025-03-06 05:18:08'),
+(290, 'Technical', '2025-03-06 05:18:08'),
+(291, 'Technical', '2025-03-06 05:18:08'),
+(292, 'Technical', '2025-03-06 05:18:08'),
+(293, 'Technical', '2025-03-06 05:18:09'),
+(294, 'Technical', '2025-03-06 05:18:09'),
+(295, 'Technical', '2025-03-06 05:18:09'),
+(296, 'Retail Inquiry', '2025-03-06 05:18:11'),
+(297, 'Retail Inquiry', '2025-03-06 05:18:11'),
+(298, 'Retail Inquiry', '2025-03-06 05:18:11'),
+(299, 'Retail Inquiry', '2025-03-06 05:18:11'),
+(300, 'Retail Inquiry', '2025-03-06 05:18:12'),
+(301, 'Retail Inquiry', '2025-03-06 05:18:12'),
+(302, 'Retail Inquiry', '2025-03-06 05:18:12'),
+(303, 'Retail Inquiry', '2025-03-06 05:18:12'),
+(304, 'Printing Avenue', '2025-03-06 05:18:14'),
+(305, 'Printing Avenue', '2025-03-06 05:18:14'),
+(306, 'Printing Avenue', '2025-03-06 05:18:15'),
+(307, 'Printing Avenue', '2025-03-06 05:18:15'),
+(308, 'Printing Avenue', '2025-03-06 05:18:15'),
+(309, 'Printing Avenue', '2025-03-06 05:18:16'),
+(310, 'Printing Avenue', '2025-03-06 05:18:16'),
+(311, 'Printing Avenue', '2025-03-06 05:18:16'),
+(312, 'Printing Avenue', '2025-03-06 05:18:16'),
+(313, 'Printing Avenue', '2025-03-06 05:18:16'),
+(314, 'Printing Avenue', '2025-03-06 05:18:16'),
+(315, 'Printing Avenue', '2025-03-06 05:18:17'),
+(316, 'Printing Avenue', '2025-03-06 05:18:17'),
+(317, 'Printing Avenue', '2025-03-06 05:18:17'),
+(318, 'Printing Avenue', '2025-03-06 05:18:17'),
+(319, 'Printing Avenue', '2025-03-06 05:18:17'),
+(320, 'Printing Avenue', '2025-03-06 05:18:17'),
+(321, 'Admin', '2025-03-06 05:39:21'),
+(322, 'Admin', '2025-03-06 05:39:22'),
+(323, 'Admin', '2025-03-06 05:39:23'),
+(324, 'Admin', '2025-03-06 05:39:23'),
+(325, 'Technical', '2025-03-06 05:39:26'),
+(326, 'Technical', '2025-03-06 05:39:26'),
+(327, 'Technical', '2025-03-06 05:39:27'),
+(328, 'Technical', '2025-03-06 05:39:28'),
+(329, 'Admin', '2025-03-06 06:34:46'),
+(330, 'Admin', '2025-03-06 06:34:55'),
+(331, 'Technical', '2025-03-06 06:44:03'),
+(332, 'Admin', '2025-03-06 06:57:30'),
+(333, 'Technical', '2025-03-06 06:57:40'),
+(334, 'Admin', '2025-03-06 06:57:42'),
+(335, 'Retail Inquiry', '2025-03-06 06:57:44'),
+(336, 'Printing Avenue', '2025-03-06 06:57:45'),
+(337, 'Technical', '2025-03-06 06:57:49'),
+(338, 'Admin', '2025-03-06 06:57:50'),
+(339, 'Retail Inquiry', '2025-03-06 06:57:52'),
+(340, 'Printing Avenue', '2025-03-06 06:57:53'),
+(341, 'Technical', '2025-03-06 06:58:25'),
+(342, 'Technical', '2025-03-06 07:13:41'),
+(343, 'Printing Avenue', '2025-03-06 07:13:44'),
+(344, 'Retail Inquiry', '2025-03-06 07:13:46'),
+(345, 'Admin', '2025-03-06 07:13:48'),
+(346, 'Technical', '2025-03-06 07:13:50'),
+(347, 'Admin', '2025-03-06 07:18:43'),
+(348, 'Retail Inquiry', '2025-03-06 07:18:45'),
+(349, 'Printing Avenue', '2025-03-06 07:18:46'),
+(350, 'Technical', '2025-03-06 07:18:47'),
+(351, 'Printing Avenue', '2025-03-06 07:44:46'),
+(352, 'Printing Avenue', '2025-03-06 07:44:50'),
+(353, 'Printing Avenue', '2025-03-06 07:44:53'),
+(354, 'Printing Avenue', '2025-03-06 07:44:56'),
+(355, 'Printing Avenue', '2025-03-06 07:45:00'),
+(356, 'Printing Avenue', '2025-03-06 07:45:03'),
+(357, 'Printing Avenue', '2025-03-06 07:45:06'),
+(358, 'Printing Avenue', '2025-03-06 07:45:09'),
+(359, 'Printing Avenue', '2025-03-06 07:45:12'),
+(360, 'Printing Avenue', '2025-03-06 07:45:15'),
+(361, 'Printing Avenue', '2025-03-06 07:45:19'),
+(362, 'Technical', '2025-03-06 07:52:38'),
+(363, 'Printing Avenue', '2025-03-06 07:52:41'),
+(364, 'Technical', '2025-03-06 07:57:05'),
+(365, 'Printing Avenue', '2025-03-06 07:57:19'),
+(366, 'Technical', '2025-03-06 08:05:19'),
+(367, 'Retail Inquiry', '2025-03-07 01:09:33'),
+(368, 'Technical', '2025-03-07 01:11:07');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `users`
+--
+
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL,
+  `uname` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `users`
+--
+
+INSERT INTO `users` (`id`, `uname`, `email`, `password`) VALUES
+(1, 'user', 'test@example.com', '$2y$10$yWV6b0Pyk3Kb/a3eHzyzvuJmLhzZv9t5ibxzDFsXEqkCwpBOrrRmS'),
+(4, 'josh', 'test@gmail.com', '$2y$10$C5p2fLZcwVulRRiFeMQA2uV7AcKGVJ0tf7sUc9KvtlY6CF0VYkYq6'),
+(8, 'testuser', 'testuser@example.com', '12345'),
+(10, 'uname', 'uname@gmail.com', 'PAssword!'),
+(11, 'rani', 'rani@gmail.com', '$2y$10$fnPPiwJN2K6lM887UJmKtuHUqhQzikVxmnyEcmqwVhOE.xSF9VgX2'),
+(12, 'rain', 'rain@gmail.com', '$2y$10$6ZvmHlc0l7Ohi8V3pC.m9OSV56JuLSe2F.AUcLRk0iD3Mrye4YR/u'),
+(13, 'raniel', 'raniel@gmail.com', '$2y$10$xzqidIwhsLHKxU168PkLtObcZWijX9iM4JN7OAOGg9S0FMCDzQcUy'),
+(14, 'roales', 'roales@gmail.com', '$2y$10$Ih2uCQF.OZQh6d/wrj0HBuQQj/60g7DFqP3Enk5gBDVSOoKy2WmyO');
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `counter`
+--
+ALTER TABLE `counter`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `users`
+--
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uname` (`uname`),
+  ADD UNIQUE KEY `email` (`email`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `counter`
+--
+ALTER TABLE `counter`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=369;
+
+--
+-- AUTO_INCREMENT for table `users`
+--
+ALTER TABLE `users`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
