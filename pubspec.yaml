@@ -1,0 +1,29 @@
+name: kpi_test
+description: "A new Flutter project."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.3.0
+  lucide_icons: ^0.257.0
+
+
+  cupertino_icons: ^1.0.8
+  flutter_awesome_alert_box: ^2.1.1
+  shared_preferences: ^2.5.2
+  fl_chart: ^0.70.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+
+flutter:
+
+  uses-material-design: true
