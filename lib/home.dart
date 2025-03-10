@@ -5,6 +5,8 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'login.dart';
+import 'dart:convert';
+
 // import 'statistics.dart';
 
 class MyHomePage extends StatefulWidget {
@@ -14,6 +16,8 @@ class MyHomePage extends StatefulWidget {
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
+
+
 
 class _MyHomePageState extends State<MyHomePage> {
   int adminCounter = 0;
@@ -27,6 +31,13 @@ class _MyHomePageState extends State<MyHomePage> {
     "Retail Inquiry": false,
     "Printing Avenue": false,
   };
+  @override
+  void initState() {
+    super.initState();
+    _fetchClickCounts();
+  }
+
+  
 
   Future<void> _sendClickData(String buttonType) async {
     final url = Uri.parse('http://192.168.1.182/kpi_itave/store_click.php');
@@ -41,6 +52,25 @@ class _MyHomePageState extends State<MyHomePage> {
       print("Error sending click data: $e");
     }
   }
+  Future<void> _fetchClickCounts() async {
+    final url = Uri.parse('http://192.168.1.182/kpi_itave/store_click.php');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        setState(() {
+          adminCounter = int.tryParse(data["Admin"].toString()) ?? 0;
+          technicalCounter = int.tryParse(data["Technical"].toString()) ?? 0;
+          retailInquiryCounter = int.tryParse(data["Retail Inquiry"].toString()) ?? 0;
+          printingAvenueCounter = int.tryParse(data["Printing Avenue"].toString()) ?? 0;
+        });
+      }
+    } catch (e) {
+      print("Error fetching counts: $e");
+    }
+  }
+
 
   void _logout() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -60,21 +90,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _incrementCounter(String buttonType) {
     if (isButtonDisabled[buttonType] == true) return;
-    
+
     setState(() {
       isButtonDisabled[buttonType] = true;
-      if (buttonType == 'Admin') {
-        adminCounter++;
-      } else if (buttonType == 'Technical') {
-        technicalCounter++;
-      } else if (buttonType == 'Retail Inquiry') {
-        retailInquiryCounter++;
-      } else if (buttonType == 'Printing Avenue') {
-        printingAvenueCounter++;
-      }
     });
-    _sendClickData(buttonType);
-    
+
+    _sendClickData(buttonType).then((_) => _fetchClickCounts());
+
     Future.delayed(Duration(seconds: 3), () {
       setState(() {
         isButtonDisabled[buttonType] = false;
@@ -128,10 +150,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.blue.shade700,
+        backgroundColor: Color.fromARGB(255, 227, 64, 55),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            ClipOval(
+              child: Image.asset(
+                'assets/image/logo.png',
+                width: 50,
+                height: 50,
+                fit: BoxFit.cover,
+              ),
+            ),
             Text(widget.title, style: TextStyle(color: Colors.white, fontSize: 20)),
             TextButton(
               onPressed: _logout,

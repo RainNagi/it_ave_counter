@@ -40,7 +40,10 @@ class _LoginPageState extends State<LoginPage> {
       setState(() {
         errorMessage = "";
       });
-      showSuccessDialog();
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MyHomePage(title: 'Home Page')),
+      );
     } else {
       setState(() {
         errorMessage = data["message"] ?? "Login Failed!";
@@ -48,39 +51,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            "Login Successful",
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue,),
-                textAlign: TextAlign.center,
-            ),
-          content: Text("Click OK to continue.",
-                textAlign: TextAlign.center,),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => MyHomePage(title: 'Home Page')),
-                );
-              },
-              child: Text("OK"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -105,7 +76,7 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               ClipOval(
                 child: Image.asset(
-                  'assets/image/logo.jpg',
+                  'assets/image/logo.png',
                   width: 70,
                   height: 70,
                   fit: BoxFit.cover,
@@ -131,7 +102,7 @@ class _LoginPageState extends State<LoginPage> {
                       decoration: InputDecoration(
                         labelText: 'Email or Username',
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30)
+                          borderRadius: BorderRadius.circular(12)
                         ),
                         prefixIcon: Icon(LucideIcons.mail),
                       ),
@@ -143,7 +114,7 @@ class _LoginPageState extends State<LoginPage> {
                       decoration: InputDecoration(
                         labelText: 'Password',
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         prefixIcon: Icon(LucideIcons.lock),
                         suffixIcon: IconButton(
@@ -167,7 +138,7 @@ class _LoginPageState extends State<LoginPage> {
                           backgroundColor: const Color.fromARGB(255, 227, 64, 55),
                           padding: EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(12),
                           )
                         ),
                         child: Text(
@@ -203,8 +174,10 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ]
                 ),
-              )
+              ),
+              
             ],
+            
           ),
         ),
       ),
