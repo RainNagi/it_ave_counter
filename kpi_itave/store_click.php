@@ -3,7 +3,6 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 
-
 include 'db_config.php';
 
 ini_set('display_errors', 1);
@@ -17,7 +16,7 @@ $buttonType = $_POST['buttonType'] ?? '';
 
 if (!empty($buttonType)) {
     $stmt = $conn->prepare("INSERT INTO counter (button_name) VALUES (?)");
-
+    
     if ($stmt === false) {
         die("Error preparing the statement: " . $conn->error);
     }
@@ -31,9 +30,21 @@ if (!empty($buttonType)) {
     }
 
     $stmt->close();
-} else {
-    echo "No button type received.";
 }
+
+$query = "SELECT button_name, COUNT(*) as count 
+          FROM counter 
+          WHERE DATE(timestamp) = CURDATE()
+          GROUP BY button_name";
+
+$result = $conn->query($query);
+
+$data = [];
+while ($row = $result->fetch_assoc()) {
+    $data[$row['button_name']] = $row['count'];
+}
+
+echo json_encode($data);
 
 $conn->close();
 ?>
