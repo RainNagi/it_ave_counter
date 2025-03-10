@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:lucide_icons/lucide_icons.dart';
 import 'dart:convert';
+
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -15,6 +17,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String unameError = "";
   String emailError = "";
   String passwordError = "";
+  bool _isObscure = true;
+
+  void togglePasswordVisibility() {
+    setState(() {
+      _isObscure = !_isObscure;
+    });
+  }
 
   Future<void> registerUser() async {
     setState(() {
@@ -23,7 +32,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       passwordError = "";
     });
 
-    var url = Uri.parse("http://192.168.1.239/kpi_itave/auth-handler.php");
+    var url = Uri.parse("http://192.168.1.182/kpi_itave/auth-handler.php");
     var response = await http.post(url, body: {
       "action": "register",
       "uname": unameController.text,
@@ -62,7 +71,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       backgroundColor: Colors.grey[200],
       body: Center(
         child: Container(
-          width: 350,
+          width: 550,
           padding: EdgeInsets.all(20.0),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -78,108 +87,143 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              ClipOval(
+                child: Image.asset(
+                  'assets/image/logo.jpg',
+                  width: 70,
+                  height: 70,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              SizedBox(height: 10),
               Text(
-                'Register',
+                'Create An Account',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue,
+                  color: const Color.fromARGB(255, 227, 64, 55),
                 ),
               ),
               SizedBox(height: 20),
-
-              // Username Field
-              TextField(
-                controller: unameController,
-                decoration: InputDecoration(
-                  labelText: "Username",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              if (unameError.isNotEmpty)
-                Padding(
-                  padding: EdgeInsets.only(top: 5),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      unameError,
-                      style: TextStyle(color: Colors.red, fontSize: 12),
+              Container(
+                width: 300,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    TextField(
+                      controller: unameController,
+                      decoration: InputDecoration(
+                        labelText: "Username",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30)
+                        ),
+                        prefixIcon: Icon(LucideIcons.user)
+                      ),
                     ),
-                  ),
-                ),
-              SizedBox(height: 10),
+                    if (unameError.isNotEmpty)
+                      Padding(
+                        padding: EdgeInsets.only(top: 5),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            unameError,
+                            style: TextStyle(color: Colors.red, fontSize: 12),
+                          ),
+                        ),
+                      ),
+                    SizedBox(height: 10),
 
-              // Email Field
-              TextField(
-                controller: emailController,
-                decoration: InputDecoration(
-                  labelText: "Email",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              if (emailError.isNotEmpty)
-                Padding(
-                  padding: EdgeInsets.only(top: 5),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      emailError,
-                      style: TextStyle(color: Colors.red, fontSize: 12),
+                    // Email Field
+                    TextField(
+                      controller: emailController,
+                      decoration: InputDecoration(
+                        labelText: "Email",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30)
+                        ),
+                        prefixIcon: Icon(LucideIcons.mail)
+                      ),
                     ),
-                  ),
-                ),
-              SizedBox(height: 10),
+                    if (emailError.isNotEmpty)
+                      Padding(
+                        padding: EdgeInsets.only(top: 5),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            emailError,
+                            style: TextStyle(color: Colors.red, fontSize: 12),
+                          ),
+                        ),
+                      ),
+                    SizedBox(height: 10),
 
-              // Password Field
-              TextField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: "Password",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              if (passwordError.isNotEmpty)
-                Padding(
-                  padding: EdgeInsets.only(top: 5),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      passwordError,
-                      style: TextStyle(color: Colors.red, fontSize: 12),
+                    // Password Field
+                    TextField(
+                      controller: passwordController,
+                      obscureText: _isObscure,
+                      decoration: InputDecoration(
+                        labelText: "Password",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30)
+                        ),
+                        prefixIcon: Icon(LucideIcons.lock),
+                        suffixIcon: IconButton(
+                          icon: Icon(_isObscure ? LucideIcons.eyeOff : LucideIcons.eye),
+                          onPressed: togglePasswordVisibility, 
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              SizedBox(height: 20),
-
-              // Register Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: registerUser,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    padding: EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                    if (passwordError.isNotEmpty)
+                      Padding(
+                        padding: EdgeInsets.only(top: 5),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            passwordError,
+                            style: TextStyle(color: Colors.red, fontSize: 12),
+                          ),
+                        ),
+                      ),
+                    SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: registerUser,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color.fromARGB(255, 227, 64, 55),
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          "Register",
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    "Register",
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
-                ),
-              ),
-              SizedBox(height: 10),
-
-              // Already have an account? Login
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: Text(
-                  "Already have an account? Login",
-                  style: TextStyle(color: Colors.blue),
+                    SizedBox(height: 10),
+                    SizedBox(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Already have an account?",
+                            style: TextStyle(color: Colors.black),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            child: Text(
+                              "Sign In",
+                              style: TextStyle(color: const Color.fromARGB(255, 227, 64, 55),),
+                            ),
+                          ),
+                        ]
+                      ),
+                    )
+                  ],
                 ),
               ),
             ],

@@ -29,7 +29,7 @@ class _MyHomePageState extends State<MyHomePage> {
   };
 
   Future<void> _sendClickData(String buttonType) async {
-    final url = Uri.parse('http://192.168.1.239/kpi_itave/store_click.php');
+    final url = Uri.parse('http://192.168.1.182/kpi_itave/store_click.php');
     try {
       final response = await http.post(url, body: {'buttonType': buttonType});
       if (response.statusCode == 200) {

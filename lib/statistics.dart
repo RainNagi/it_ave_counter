@@ -45,7 +45,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
   }
 
   Future<void> fetchStatistics() async {
-    final url = Uri.parse('http://192.168.1.239/kpi_itave/statistics.php?year=$selectedYear&month=$selectedMonthValue');
+    final url = Uri.parse('http://192.168.1.182/kpi_itave/statistics.php?year=$selectedYear&month=$selectedMonthValue');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
