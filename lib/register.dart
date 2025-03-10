@@ -97,7 +97,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               SizedBox(height: 10),
               Text(
-                'Create An Account',
+                'Create an Account',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -164,7 +164,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       decoration: InputDecoration(
                         labelText:  "Password",
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30)
+                          borderRadius: BorderRadius.circular(30),
+                          borderSide: BorderSide(
+                            color: Color.fromARGB(19, 11, 145, 240)
+                          )
                         ),
                         prefixIcon: Icon(LucideIcons.lock),
                         suffixIcon: IconButton(
@@ -217,7 +220,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             },
                             child: Text(
                               "Sign In",
-                              style: TextStyle(color: const Color.fromARGB(255, 227, 64, 55),),
+                              style: TextStyle(color: Color.fromARGB(255, 11, 129, 240),),
                             ),
                           ),
                         ]

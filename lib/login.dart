@@ -99,24 +99,48 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     TextField(
                       controller: emailController,
+                      style: TextStyle(color: Color.fromARGB(255, 11, 129, 240)),
                       decoration: InputDecoration(
                         labelText: 'Email or Username',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12)
+                        labelStyle: TextStyle(color: Colors.grey),
+                        floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 11, 129, 240)), // Color when focused
+                          border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Color.fromARGB(255, 11, 129, 240), width: 2),
+                          
                         ),
                         prefixIcon: Icon(LucideIcons.mail),
                       ),
                     ),
+
                     SizedBox(height: 10),
                     TextField(
                       controller: passwordController,
                       obscureText: _isObscure,
                       decoration: InputDecoration(
                         labelText: 'Password',
-                        border: OutlineInputBorder(
+                        labelStyle: TextStyle(color: Colors.grey),
+                        floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 11, 129, 240)), // Color when focused
+                          border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        prefixIcon: Icon(LucideIcons.lock),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Color.fromARGB(255, 11, 129, 240), width: 2),
+                          
+                        ),
+                        prefixIcon: Icon(LucideIcons.mail),
                         suffixIcon: IconButton(
                           icon: Icon(_isObscure ? LucideIcons.eyeOff : LucideIcons.eye),
                           onPressed: togglePasswordVisibility, 
@@ -166,7 +190,7 @@ class _LoginPageState extends State<LoginPage> {
                             },
                             child: Text(
                               "Sign up",
-                              style: TextStyle(color: const Color.fromARGB(255, 227, 64, 55)),
+                              style: TextStyle(color: Color.fromARGB(255, 11, 129, 240)),
                             )
                           ),
                         ]

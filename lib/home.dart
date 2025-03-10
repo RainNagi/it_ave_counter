@@ -116,11 +116,11 @@ class _MyHomePageState extends State<MyHomePage> {
           color: Colors.white,
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Icon(icon, size: 50, color: color),
+            Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.start),
             SizedBox(height: 10),
-            Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+            Icon(icon, size: 50, color: color),
             SizedBox(height: 5),
             Text('Clicked: $count times', style: TextStyle(fontSize: 16, color: Colors.grey[700]), textAlign: TextAlign.center),
             SizedBox(height: 10),
@@ -176,11 +176,11 @@ class _MyHomePageState extends State<MyHomePage> {
           width: containerWidth,
           height: containerHeight,
           padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, spreadRadius: 2)],
-          ),
+          // decoration: BoxDecoration(
+          //   color: Colors.white,
+          //   borderRadius: BorderRadius.circular(20),
+          //   boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, spreadRadius: 2)],
+          // ),
           child: Column(
             children: [
               Expanded(
