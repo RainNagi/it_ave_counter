@@ -175,7 +175,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double containerWidth = screenWidth * 0.9;
-    double containerHeight = MediaQuery.of(context).size.height * 1;
+    // double containerHeight = MediaQuery.of(context).size.height * 1;
 
     return Scaffold(
       appBar: AppBar(
