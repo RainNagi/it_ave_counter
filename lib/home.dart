@@ -104,36 +104,187 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Widget _buildCounterCard(String title, int count, IconData icon, Color color, double screenWidth) {
-    double buttonFontSize = screenWidth < 400 ? 12 : 16;
+  Widget _buildCounterCard(String title, int count, IconData icon, Color color) {
+    double screenHeight = MediaQuery.of(context).size.height;
+    double screenWidth = MediaQuery.of(context).size.width;
+    double buttonFontSize = 16;
+    double titleFontSize = 18;
+    double counterFontSize = 30;
+    double visitorFont = 10;
+    double iconSize = 64;
+    double horizontalPadding = 20;
+    if (screenHeight < 850) {
+      if (screenWidth < 500) {
+        buttonFontSize = 10;
+        titleFontSize = 10;
+        counterFontSize = 12;
+        visitorFont = 5;
+        iconSize = 64;
+        horizontalPadding = 5;
+      } else if (screenWidth < 600) {
+        buttonFontSize = 15;
+        titleFontSize = 20;
+        counterFontSize = 30;
+        visitorFont = 12;
+        iconSize = 70;
+        horizontalPadding = 5;
+      }
+    } else {
+        if (screenWidth < 500) {
+        buttonFontSize = 16;
+        titleFontSize = 6;
+        counterFontSize = 8;
+        visitorFont = 5;
+        iconSize = 64;
+        horizontalPadding = 5;
+      } else if (screenWidth < 650) {
+        buttonFontSize = 15;
+        titleFontSize = 20;
+        counterFontSize = 30;
+        visitorFont = 12;
+        iconSize = 100;
+        horizontalPadding = 5;
+      } else {
+        buttonFontSize = 20;
+        titleFontSize = 30;
+        counterFontSize = 50;
+        visitorFont = 15;
+        iconSize = 100;
+        horizontalPadding = 20;
+      }
+    }
+    
+
+
+    
+
     return Card(
-      elevation: 4,
+      // elevation: 5,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Container(
-        padding: EdgeInsets.all(10),
+        padding: EdgeInsets.all(5),
         decoration: BoxDecoration(
+          border: Border.all(
+            color: const Color.fromARGB(91, 0, 0, 0),
+            
+          ),
           borderRadius: BorderRadius.circular(15),
-          color: Colors.white,
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.start),
-            SizedBox(height: 10),
-            Icon(icon, size: 50, color: color),
-            SizedBox(height: 5),
-            Text('Clicked: $count times', style: TextStyle(fontSize: 16, color: Colors.grey[700]), textAlign: TextAlign.center),
-            SizedBox(height: 10),
+            Expanded(
+              child: Container(
+              // width: 500,
+              // height: 500,
+              padding: EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                // border: Border(
+                //   top: BorderSide(color: Colors.black),
+                //   left: BorderSide(color: Colors.black),
+                //   right: BorderSide(color: Colors.black),
+                //   bottom: BorderSide.none,
+                // ),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(15),
+                  topRight: Radius.circular(15),  
+                ),
+                color: const Color.fromARGB(255, 255, 255, 255),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: EdgeInsets.only(
+                      left: horizontalPadding,
+                      right: horizontalPadding
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      // crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(title,
+                                style: TextStyle(
+                                  fontSize: titleFontSize, 
+                                  fontWeight: FontWeight.bold,
+                                  ), 
+                                textAlign: TextAlign.justify, 
+                                softWrap: true,
+                              ),
+                              Container(
+                                width: 30,
+                                height: 2,
+                                color: Color.fromRGBO(111, 5, 6, 1),
+                              ),                            
+                            ]
+                          ),
+                        ),
+                        SizedBox(width: 30,),
+                        Container(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text('$count', 
+                                style: TextStyle(
+                                  fontSize: counterFontSize, 
+                                  color: Colors.black, 
+                                  fontWeight: FontWeight.bold
+                                ),
+                                textAlign: TextAlign.center
+                              ),
+                              Text('Visitors', 
+                                style: TextStyle(
+                                  fontSize: visitorFont,
+                                  color: Colors.grey[700]
+                                ), 
+                                textAlign: TextAlign.center
+                              ),
+                            ],
+                          ),
+                        )
+                      ]
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(height: 10),
+                        Icon(icon, size: iconSize, color: Color.fromRGBO(151, 81, 2, 1)),
+                        SizedBox(height: 5),
+                        SizedBox(height: 10),
+                      ],
+                    ),
+                  )
+                  
+                ],
+                
+              ),
+            ),
+            ),
+            
             ElevatedButton(
               onPressed: isButtonDisabled[title]! ? null : () => _incrementCounter(title),
               style: ElevatedButton.styleFrom(
-                backgroundColor: color,
+                backgroundColor: Color.fromRGBO(53, 53, 63, 1),
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(15),
+                    bottomRight: Radius.circular(15),
+                  ),
+                ),
               ),
               child: Center(
-                child: Text("Click $title", style: TextStyle(fontSize: buttonFontSize), textAlign: TextAlign.center),
+                child: Text("$title Visitor", style: TextStyle(fontSize: buttonFontSize), textAlign: TextAlign.center),
               ),
             ),
           ],
@@ -145,23 +296,27 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
-    double containerWidth = screenWidth * 0.9;
-    double containerHeight = MediaQuery.of(context).size.height * 1;
+    double containerWidth = screenWidth * (screenWidth < 700?  1 : 0.8);
+    double containerHeight = MediaQuery.of(context).size.height * 0.9;
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color.fromARGB(255, 227, 64, 55),
+        backgroundColor: Color.fromRGBO(111, 5, 6, 1),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             ClipOval(
-              child: Image.asset(
-                'assets/image/logo.png',
-                width: 50,
-                height: 50,
-                fit: BoxFit.cover,
+              child: Container(
+                color: Colors.white,
+                child: Image.asset(
+                  'assets/image/logo.png',
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
+            
             Text(widget.title, style: TextStyle(color: Colors.white, fontSize: 20)),
             TextButton(
               onPressed: _logout,
@@ -175,6 +330,7 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Container(
           width: containerWidth,
           height: containerHeight,
+          // color: Colors.red,
           padding: EdgeInsets.all(16),
           // decoration: BoxDecoration(
           //   color: Colors.white,
@@ -186,9 +342,9 @@ class _MyHomePageState extends State<MyHomePage> {
               Expanded(
                 child: Row(
                   children: [
-                    Expanded(child: _buildCounterCard("Admin", adminCounter, LucideIcons.user, Colors.blue, screenWidth)),
+                    Expanded(child: _buildCounterCard("Admin", adminCounter, LucideIcons.userCircle2, Colors.blue)),
                     SizedBox(width: 10),
-                    Expanded(child: _buildCounterCard("Technical", technicalCounter, LucideIcons.settings, Colors.green, screenWidth)),
+                    Expanded(child: _buildCounterCard("Technical", technicalCounter, LucideIcons.settings, Colors.green)),
                   ],
                 ),
               ),
@@ -196,9 +352,9 @@ class _MyHomePageState extends State<MyHomePage> {
               Expanded(
                 child: Row(
                   children: [
-                    Expanded(child: _buildCounterCard("Retail Inquiry", retailInquiryCounter, LucideIcons.shoppingCart, Colors.orange, screenWidth)),
+                    Expanded(child: _buildCounterCard("Retail Inquiry", retailInquiryCounter, LucideIcons.shoppingCart, Colors.orange)),
                     SizedBox(width: 10),
-                    Expanded(child: _buildCounterCard("Printing Avenue", printingAvenueCounter, LucideIcons.printer, Colors.purple, screenWidth)),
+                    Expanded(child: _buildCounterCard("Printing Avenue", printingAvenueCounter, LucideIcons.printer, Colors.purple)),
                   ],
                 ),
               ),

@@ -114,10 +114,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       controller: unameController,
                       decoration: InputDecoration(
                         labelText: "Username",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30)
+                        labelStyle: TextStyle(color: Colors.grey),
+                        floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 11, 129, 240)),
+                          border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        prefixIcon: Icon(LucideIcons.user)
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Color.fromARGB(255, 11, 129, 240), width: 2)
+                        ),
+                        prefixIcon: Icon(LucideIcons.user),
                       ),
                     ),
                     if (unameError.isNotEmpty)
@@ -138,10 +148,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       controller: emailController,
                       decoration: InputDecoration(
                         labelText: "Email",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30)
+                        labelStyle: TextStyle(color: Colors.grey),
+                        floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 11, 129, 240)),
+                          border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        prefixIcon: Icon(LucideIcons.mail)
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Color.fromARGB(255, 11, 129, 240), width: 2)
+                        ),
+                        prefixIcon: Icon(LucideIcons.mail),
                       ),
                     ),
                     if (emailError.isNotEmpty)
@@ -163,11 +183,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       obscureText: _isObscure,
                       decoration: InputDecoration(
                         labelText:  "Password",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                          borderSide: BorderSide(
-                            color: Color.fromARGB(19, 11, 145, 240)
-                          )
+                        labelStyle: TextStyle(color: Colors.grey),
+                        floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 11, 129, 240)),
+                          border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Color.fromARGB(255, 11, 129, 240), width: 2)
                         ),
                         prefixIcon: Icon(LucideIcons.lock),
                         suffixIcon: IconButton(

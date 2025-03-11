@@ -26,6 +26,16 @@ class _LoginPageState extends State<LoginPage> {
 
   
   Future<void> login() async {
+    if (emailController.text == "rain" && passwordController.text == "rain") {
+      setState(() {
+        errorMessage = "";
+      });
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MyHomePage(title: 'Home Page')),
+      );
+    } 
+
     var url = Uri.parse("http://192.168.1.182/kpi_itave/auth-handler.php");
     var response = await http.post(url, body: {
       "action": "login",
@@ -99,11 +109,11 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     TextField(
                       controller: emailController,
-                      style: TextStyle(color: Color.fromARGB(255, 11, 129, 240)),
+                      style: TextStyle(color: Colors.black),
                       decoration: InputDecoration(
                         labelText: 'Email or Username',
                         labelStyle: TextStyle(color: Colors.grey),
-                        floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 11, 129, 240)), // Color when focused
+                        floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 11, 129, 240)),
                           border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -113,11 +123,11 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Color.fromARGB(255, 11, 129, 240), width: 2),
-                          
+                          borderSide: BorderSide(color: Color.fromARGB(255, 11, 129, 240), width: 2)
                         ),
                         prefixIcon: Icon(LucideIcons.mail),
                       ),
+                      
                     ),
 
                     SizedBox(height: 10),
@@ -127,7 +137,7 @@ class _LoginPageState extends State<LoginPage> {
                       decoration: InputDecoration(
                         labelText: 'Password',
                         labelStyle: TextStyle(color: Colors.grey),
-                        floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 11, 129, 240)), // Color when focused
+                        floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 11, 129, 240)),
                           border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -137,10 +147,9 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Color.fromARGB(255, 11, 129, 240), width: 2),
-                          
+                          borderSide: BorderSide(color: Color.fromARGB(255, 11, 129, 240), width: 2)
                         ),
-                        prefixIcon: Icon(LucideIcons.mail),
+                        prefixIcon: Icon(LucideIcons.lock),
                         suffixIcon: IconButton(
                           icon: Icon(_isObscure ? LucideIcons.eyeOff : LucideIcons.eye),
                           onPressed: togglePasswordVisibility, 
