@@ -4,6 +4,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'dart:convert';
 import 'register.dart';
 import 'home.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
@@ -95,7 +96,7 @@ class _LoginPageState extends State<LoginPage> {
               SizedBox(height: 10),
               Text(
                 'Login',
-                style: TextStyle(
+                style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: const Color.fromARGB(255, 227, 64, 55),
@@ -176,7 +177,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         child: Text(
                           'Login',
-                          style: TextStyle(fontSize: 18, color: Colors.white),
+                          style: GoogleFonts.poppins(fontSize: 18, color: Colors.white),
                         ),
                       ),
                     ),
@@ -187,7 +188,7 @@ class _LoginPageState extends State<LoginPage> {
                         children: [
                           Text(
                             "Don’t have an account?",
-                            style: TextStyle(color: Colors.black),
+                            style: GoogleFonts.poppins(color: Colors.black),
                           ),
                           SizedBox(width: 5,),
                           TextButton(
@@ -199,7 +200,7 @@ class _LoginPageState extends State<LoginPage> {
                             },
                             child: Text(
                               "Sign up",
-                              style: TextStyle(color: Color.fromARGB(255, 11, 129, 240)),
+                              style: GoogleFonts.poppins(color: Color.fromARGB(255, 11, 129, 240)),
                             )
                           ),
                         ]

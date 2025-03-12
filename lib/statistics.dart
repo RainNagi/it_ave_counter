@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
 import 'home.dart';
 
@@ -179,7 +180,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.blue.shade700,
+        backgroundColor: Color.fromRGBO(111, 5, 6, 1),
         title: Row(
           children: [
             IconButton(
@@ -213,7 +214,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    Text("Statistics", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                    Text("Montly Statistics", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                     SizedBox(width: 15),
                     Flexible(
                       child: DropdownButton<String>(
@@ -256,37 +257,59 @@ class _StatisticsPageState extends State<StatisticsPage> {
                 SizedBox(
                   height: 300,
                   child: statistics.isEmpty
-                      ? Center(child: CircularProgressIndicator())
+                      ? Center(child: Text("No data available"))
                       : BarChart(
-                          BarChartData(
-                            maxY: (statistics.values.isNotEmpty
-                                    ? ((statistics.values.reduce((a, b) => a > b ? a : b) + 5) / 5).ceil() * 5
-                                    : 10)
-                                .toDouble(),
-                            barGroups: getBarChartData(),
-                            titlesData: FlTitlesData(
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  getTitlesWidget: (double value, TitleMeta meta) {
-                                    return Transform.rotate(
-                                      angle: 0,
-                                      child: Text(statistics.keys.elementAt(value.toInt()), style: TextStyle(fontSize: 12)),
-                                    );
-                                  },
-                                ),
+                        BarChartData(
+                          gridData: FlGridData(
+                            drawHorizontalLine: true,
+                            drawVerticalLine: false  
+                          ),
+                          maxY: (statistics.values.isNotEmpty
+                                  ? ((statistics.values.reduce((a, b) => a > b ? a : b) + 5) / 5).ceil() * 5
+                                  : 10)
+                              .toDouble(),
+                          barGroups: getBarChartData(),
+                          titlesData: FlTitlesData(
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                getTitlesWidget: (double value, TitleMeta meta) {
+                                  return Padding(
+                                    padding: EdgeInsets.only(top: 8), 
+                                    child: Transform.rotate(
+                                      angle: -0.4,
+                                      child: Text(
+                                        statistics.keys.elementAt(value.toInt()), 
+                                        style: TextStyle(fontSize: 12),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                interval: 5, // Ensure labels appear only at intervals of 5
+                                getTitlesWidget: (double value, TitleMeta meta) {
+                                  return value % 5 == 0
+                                      ? Text(value.toInt().toString(), style: TextStyle(fontSize: 12))
+                                      : Container();
+                                },
                               ),
                             ),
                           ),
                         ),
+                      ),
+
                 ),
 
                 SizedBox(height: 15),
-                // Second Chart (Weekday Statistics)
-                Text("Statistics for Days of a Week", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
+                    Text("Weekday Statistics", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                    SizedBox(width: 10),
                     Flexible(
                       child: DropdownButton<String>(
                         value: selectedDepartment,
@@ -312,6 +335,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
                       ? Center(child: Text("No data available"))
                       : BarChart(
                           BarChartData(
+                            gridData: FlGridData(
+                              drawHorizontalLine: true,
+                              drawVerticalLine: false  
+                            ),
                             maxY: (weekdayStatistics.values.isNotEmpty
                                     ? ((weekdayStatistics.values.reduce((a, b) => a > b ? a : b) + 5) / 5).ceil() * 5
                                     : 10)
@@ -323,9 +350,20 @@ class _StatisticsPageState extends State<StatisticsPage> {
                                   showTitles: true,
                                   getTitlesWidget: (double value, TitleMeta meta) {
                                     return Transform.rotate(
-                                      angle: 0,
+                                      angle: -0.4,
                                       child: Text(weekdaysOrder[value.toInt()], style: TextStyle(fontSize: 12)),
                                     );
+                                  },
+                                ),
+                              ),
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  interval: 5, // Ensure labels appear only at intervals of 5
+                                  getTitlesWidget: (double value, TitleMeta meta) {
+                                    return value % 5 == 0
+                                        ? Text(value.toInt().toString(), style: TextStyle(fontSize: 12))
+                                        : Container();
                                   },
                                 ),
                               ),

@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:kpi_test/statistics.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import 'login.dart';
 import 'dart:convert';
@@ -20,6 +21,7 @@ class MyHomePage extends StatefulWidget {
 
 
 class _MyHomePageState extends State<MyHomePage> {
+  String username = "User"; // Default username
   int adminCounter = 0;
   int technicalCounter = 0;
   int retailInquiryCounter = 0;
@@ -35,6 +37,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     _fetchClickCounts();
+    _loadUsername();
   }
 
   
@@ -69,6 +72,12 @@ class _MyHomePageState extends State<MyHomePage> {
     } catch (e) {
       print("Error fetching counts: $e");
     }
+  }
+  Future<void> _loadUsername() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      username = prefs.getString("username") ?? "User";
+    });
   }
 
 
@@ -132,8 +141,8 @@ class _MyHomePageState extends State<MyHomePage> {
     } else {
         if (screenWidth < 500) {
         buttonFontSize = 16;
-        titleFontSize = 6;
-        counterFontSize = 8;
+        titleFontSize = 15;
+        counterFontSize = 19;
         visitorFont = 5;
         iconSize = 64;
         horizontalPadding = 5;
@@ -146,151 +155,137 @@ class _MyHomePageState extends State<MyHomePage> {
         horizontalPadding = 5;
       } else {
         buttonFontSize = 20;
-        titleFontSize = 30;
-        counterFontSize = 50;
-        visitorFont = 15;
-        iconSize = 100;
+        titleFontSize = 20;
+        counterFontSize = 40;
+        visitorFont = 13;
+        iconSize = 60;
         horizontalPadding = 20;
       }
     }
-    
-
-
-    
 
     return Card(
-      // elevation: 5,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Container(
         padding: EdgeInsets.all(5),
         decoration: BoxDecoration(
-          border: Border.all(
-            color: const Color.fromARGB(91, 0, 0, 0),
-            
-          ),
+          border: Border.all(color: Color.fromARGB(91, 0, 0, 0)),
           borderRadius: BorderRadius.circular(15),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Container(
-              // width: 500,
-              // height: 500,
-              padding: EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                // border: Border(
-                //   top: BorderSide(color: Colors.black),
-                //   left: BorderSide(color: Colors.black),
-                //   right: BorderSide(color: Colors.black),
-                //   bottom: BorderSide.none,
-                // ),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(15),
-                  topRight: Radius.circular(15),  
-                ),
-                color: const Color.fromARGB(255, 255, 255, 255),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: EdgeInsets.only(
-                      left: horizontalPadding,
-                      right: horizontalPadding
+        child: InkWell(
+          onTap: isButtonDisabled[title]! ? null : () => _incrementCounter(title),
+          
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(15),
+                      topRight: Radius.circular(15),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      // crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(title,
-                                style: TextStyle(
-                                  fontSize: titleFontSize, 
-                                  fontWeight: FontWeight.bold,
-                                  ), 
-                                textAlign: TextAlign.justify, 
-                                softWrap: true,
-                              ),
-                              Container(
-                                width: 30,
-                                height: 2,
-                                color: Color.fromRGBO(111, 5, 6, 1),
-                              ),                            
-                            ]
-                          ),
-                        ),
-                        SizedBox(width: 30,),
-                        Container(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text('$count', 
-                                style: TextStyle(
-                                  fontSize: counterFontSize, 
-                                  color: Colors.black, 
-                                  fontWeight: FontWeight.bold
+                    color: Colors.white,
+                  ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      double screenWidth = constraints.maxWidth;
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(title,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: titleFontSize, 
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        textAlign: TextAlign.justify,
+                                        softWrap: true,
+                                      ),
+                                      Container(width: 30, height: 2, color: Color.fromRGBO(111, 5, 6, 1)),
+                                    ],
+                                  ),
                                 ),
-                                textAlign: TextAlign.center
-                              ),
-                              Text('Visitors', 
-                                style: TextStyle(
-                                  fontSize: visitorFont,
-                                  color: Colors.grey[700]
-                                ), 
-                                textAlign: TextAlign.center
-                              ),
-                            ],
+                                SizedBox(width: screenWidth * 0.05),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text('$count',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: counterFontSize, 
+                                        color: Colors.black, 
+                                        fontWeight: FontWeight.bold
+                                      ),
+                                      textAlign: TextAlign.center
+                                    ),
+                                    Text('Visitors',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: visitorFont,
+                                        color: Colors.grey[700]
+                                      ), 
+                                      textAlign: TextAlign.center
+                                    ),
+                                  ],
+                                )
+                              ],
+                            ),
                           ),
-                        )
-                      ]
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(height: 10),
-                        Icon(icon, size: iconSize, color: Color.fromRGBO(151, 81, 2, 1)),
-                        SizedBox(height: 5),
-                        SizedBox(height: 10),
-                      ],
-                    ),
-                  )
-                  
-                ],
-                
-              ),
-            ),
-            ),
-            
-            ElevatedButton(
-              onPressed: isButtonDisabled[title]! ? null : () => _incrementCounter(title),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color.fromRGBO(53, 53, 63, 1),
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(15),
-                    bottomRight: Radius.circular(15),
+                          Expanded(
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                double availableHeight = constraints.maxHeight; // Get dynamic height
+
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(height: availableHeight * 0.1), // Responsive spacing
+                                    Icon(icon, size: availableHeight * 0.5, color: Color.fromRGBO(151, 81, 2, 1)), // Scale icon size
+                                    SizedBox(height: availableHeight * 0.05), // Responsive spacing
+                                  ],
+                                );
+                              },
+                            ),
+                          )
+                        ],
+                      );
+                    },
                   ),
                 ),
               ),
-              child: Center(
-                child: Text("$title Visitor", style: TextStyle(fontSize: buttonFontSize), textAlign: TextAlign.center),
+              ElevatedButton(
+                onPressed: isButtonDisabled[title]! ? null : () => _incrementCounter(title),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color.fromRGBO(53, 53, 63, 1),
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(15),
+                      bottomRight: Radius.circular(15),
+                    ),
+                  ),
+                ),
+                child: Center(
+                  child: Text("$title Visitor", style: GoogleFonts.poppins(fontSize: buttonFontSize), textAlign: TextAlign.center),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
+
   }
 
   @override
@@ -316,11 +311,31 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
             ),
-            
-            Text(widget.title, style: TextStyle(color: Colors.white, fontSize: 20)),
-            TextButton(
-              onPressed: _logout,
-              child: Text("Logout", style: TextStyle(color: Colors.white, fontSize: 16)),
+            Text(widget.title, style: GoogleFonts.poppins(color: Colors.white, fontSize: 20)),
+            PopupMenuButton<int>(
+              icon: Icon(Icons.account_circle, color: Colors.white, size: 30),
+              onSelected: (value) {
+                if (value == 1) {
+                  _logout();
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 0,
+                  child: Text(username, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+                ),
+                PopupMenuDivider(),
+                PopupMenuItem(
+                  value: 1,
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text("Logout", style: GoogleFonts.poppins(color: Colors.red)),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -370,7 +385,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: Text("Statistics", style: TextStyle(fontSize: 18)),
+                  child: Text("Statistics", style: GoogleFonts.poppins(fontSize: 18)),
                 ),
               ),
             ],
