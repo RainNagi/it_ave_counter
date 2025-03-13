@@ -14,6 +14,13 @@ class StatisticsPage extends StatefulWidget {
 }
 
 class _StatisticsPageState extends State<StatisticsPage> {
+  @override
+  void initState() {
+    super.initState();
+    fetchYears();
+    fetchWeekdayStatistics();
+  }
+
   Map<String, int> statistics = {};
   String selectedYear = DateTime.now().year.toString();
   String selectedMonthValue = "01"; 
@@ -55,18 +62,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
     }
     return bars;
   }
-
-
-
-
-
-  @override
-  void initState() {
-    super.initState();
-    fetchYears();
-    fetchWeekdayStatistics();
-  }
-
 
   Future<void> fetchYears() async {
     final url = Uri.parse('http://192.168.1.182/kpi_itave/statistics.php?action=getYears');
@@ -190,10 +185,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
                   MaterialPageRoute(builder: (context) => MyHomePage(title: 'Home Page')),
                 );
               },
-              icon: Icon(LucideIcons.arrowLeft, size: 20, color: Colors.white),
+              icon: const Icon(LucideIcons.arrowLeftCircle, size: 30, color: Colors.white),
             ),
             SizedBox(width: 10),
-            Text("Statistics", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text("Statistics", style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
           ],
         ),
       ),
@@ -214,7 +209,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    Text("Montly Statistics", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                    Text("Montly Statistics", style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold)),
                     SizedBox(width: 15),
                     Flexible(
                       child: DropdownButton<String>(
@@ -280,7 +275,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                                       angle: -0.4,
                                       child: Text(
                                         statistics.keys.elementAt(value.toInt()), 
-                                        style: TextStyle(fontSize: 12),
+                                        style: GoogleFonts.poppins(fontSize: 12),
                                       ),
                                     ),
                                   );
@@ -293,7 +288,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                                 interval: 5, // Ensure labels appear only at intervals of 5
                                 getTitlesWidget: (double value, TitleMeta meta) {
                                   return value % 5 == 0
-                                      ? Text(value.toInt().toString(), style: TextStyle(fontSize: 12))
+                                      ? Text(value.toInt().toString(), style: GoogleFonts.poppins(fontSize: 12))
                                       : Container();
                                 },
                               ),
@@ -308,7 +303,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    Text("Weekday Statistics", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                    Text("Weekday Statistics", style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold)),
                     SizedBox(width: 10),
                     Flexible(
                       child: DropdownButton<String>(
@@ -351,7 +346,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                                   getTitlesWidget: (double value, TitleMeta meta) {
                                     return Transform.rotate(
                                       angle: -0.4,
-                                      child: Text(weekdaysOrder[value.toInt()], style: TextStyle(fontSize: 12)),
+                                      child: Text(weekdaysOrder[value.toInt()], style: GoogleFonts.poppins(fontSize: 12)),
                                     );
                                   },
                                 ),
@@ -362,7 +357,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                                   interval: 5, // Ensure labels appear only at intervals of 5
                                   getTitlesWidget: (double value, TitleMeta meta) {
                                     return value % 5 == 0
-                                        ? Text(value.toInt().toString(), style: TextStyle(fontSize: 12))
+                                        ? Text(value.toInt().toString(), style: GoogleFonts.poppins(fontSize: 12))
                                         : Container();
                                   },
                                 ),

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:kpi_test/statistics.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import 'login.dart';
 import 'dart:convert';
+import 'statistics.dart';
+import 'settings.dart';
+import 'test.dart';
 
 // import 'statistics.dart';
 
@@ -39,8 +41,6 @@ class _MyHomePageState extends State<MyHomePage> {
     _fetchClickCounts();
     _loadUsername();
   }
-
-  
 
   Future<void> _sendClickData(String buttonType) async {
     final url = Uri.parse('http://192.168.1.182/kpi_itave/store_click.php');
@@ -90,10 +90,22 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  void _GotoStatistics(){
+  void _goToStatistics(){
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => StatisticsPage())
+    );
+  }
+  void _goToSettings(){
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => SettingsPage())
+    );
+  }
+  void _goToTest(){
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => TestPage())
     );
   }
 
@@ -120,23 +132,23 @@ class _MyHomePageState extends State<MyHomePage> {
     double titleFontSize = 18;
     double counterFontSize = 30;
     double visitorFont = 10;
-    double iconSize = 64;
-    double horizontalPadding = 20;
+    // double iconSize = 64;
+    // double horizontalPadding = 20;
     if (screenHeight < 850) {
       if (screenWidth < 500) {
         buttonFontSize = 10;
         titleFontSize = 10;
         counterFontSize = 12;
         visitorFont = 5;
-        iconSize = 64;
-        horizontalPadding = 5;
+        // iconSize = 64;
+        // horizontalPadding = 5;
       } else if (screenWidth < 600) {
         buttonFontSize = 15;
         titleFontSize = 20;
         counterFontSize = 30;
         visitorFont = 12;
-        iconSize = 70;
-        horizontalPadding = 5;
+        // iconSize = 70;
+        // horizontalPadding = 5;
       }
     } else {
         if (screenWidth < 500) {
@@ -144,22 +156,22 @@ class _MyHomePageState extends State<MyHomePage> {
         titleFontSize = 15;
         counterFontSize = 19;
         visitorFont = 5;
-        iconSize = 64;
-        horizontalPadding = 5;
+        // iconSize = 64;
+        // horizontalPadding = 5;
       } else if (screenWidth < 650) {
         buttonFontSize = 15;
         titleFontSize = 20;
         counterFontSize = 30;
         visitorFont = 12;
-        iconSize = 100;
-        horizontalPadding = 5;
+        // iconSize = 100;
+        // horizontalPadding = 5;
       } else {
         buttonFontSize = 20;
         titleFontSize = 20;
         counterFontSize = 40;
         visitorFont = 13;
-        iconSize = 60;
-        horizontalPadding = 20;
+        // iconSize = 60;
+        // horizontalPadding = 20;
       }
     }
 
@@ -311,12 +323,18 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
             ),
-            Text(widget.title, style: GoogleFonts.poppins(color: Colors.white, fontSize: 20)),
+            Text(widget.title, style: GoogleFonts.poppins(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
             PopupMenuButton<int>(
               icon: Icon(Icons.account_circle, color: Colors.white, size: 30),
               onSelected: (value) {
-                if (value == 1) {
+                if (value == 3) {
                   _logout();
+                } else if (value == 2) {
+                  _goToSettings();
+                } else if (value == 1) {
+                  _goToStatistics();
+                } else if (value == 4) {
+                  _goToTest();
                 }
               },
               itemBuilder: (context) => [
@@ -329,12 +347,46 @@ class _MyHomePageState extends State<MyHomePage> {
                   value: 1,
                   child: Row(
                     children: [
+                      Icon(Icons.analytics, color: const Color.fromARGB(255, 0, 0, 0)),
+                      SizedBox(width: 8),
+                      Text("Analytics", style: GoogleFonts.poppins(color: const Color.fromARGB(255, 0, 0, 0))),
+                    ],
+                  ),
+                ),
+                PopupMenuDivider(),
+                PopupMenuItem(
+                  value: 2,
+                  child: Row(
+                    children: [
+                      Icon(Icons.settings, color: const Color.fromARGB(255, 0, 0, 0)),
+                      SizedBox(width: 8),
+                      Text("Settings", style: GoogleFonts.poppins(color: const Color.fromARGB(255, 0, 0, 0))),
+                    ],
+                  ),
+                ),
+                PopupMenuDivider(),
+                PopupMenuItem(
+                  value: 3,
+                  child: Row(
+                    children: [
                       Icon(Icons.logout, color: Colors.red),
                       SizedBox(width: 8),
                       Text("Logout", style: GoogleFonts.poppins(color: Colors.red)),
                     ],
                   ),
                 ),
+                PopupMenuDivider(),
+                PopupMenuItem(
+                  value: 4,
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.activity, color: const Color.fromARGB(255, 0, 0, 0)),
+                      SizedBox(width: 8),
+                      Text("Test", style: GoogleFonts.poppins(color: const Color.fromARGB(255, 0, 0, 0))),
+                    ],
+                  ),
+                ),
+                
               ],
             ),
           ],
@@ -375,18 +427,23 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               SizedBox(height: 20),
               Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    _GotoStatistics();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: Text("Statistics", style: GoogleFonts.poppins(fontSize: 18)),
-                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        // _goToCustomerFeedBack();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: Text("Feedback", style: GoogleFonts.poppins(fontSize: 18)),
+                    ),
+                  ],
+                )
               ),
             ],
           ),
