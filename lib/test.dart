@@ -1,119 +1,119 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
-class TestPage extends StatefulWidget {
-  const TestPage({super.key});
-
-  @override
-  State<TestPage> createState() => _TestPageState();
+void main() {
+  runApp(MyApp());
 }
 
-class _TestPageState extends State<TestPage> {
-  // Store all available icons from Lucide
-  final Map<String, IconData> _iconMap = {
-    'search': LucideIcons.search,
-    'package': LucideIcons.package,
-    'truck': LucideIcons.truck,
-    'home': LucideIcons.home,
-    'settings': LucideIcons.settings,
-    'user': LucideIcons.userCircle2,
-    'bell': LucideIcons.bell,
-    'heart': LucideIcons.heart,
-    'star': LucideIcons.star,
-    'camera': LucideIcons.camera,
-    'messageCircle': LucideIcons.messageCircle,
-    'checkCircle': LucideIcons.checkCircle,
-    'cloud': LucideIcons.cloud,
-    'lock': LucideIcons.lock,
-    'wifi': LucideIcons.wifi,
-    'music': LucideIcons.music,
-    'arrowLeft': LucideIcons.arrowLeft,
-    'arrowRight': LucideIcons.arrowRight,
-    'arrowUp': LucideIcons.arrowUp,
-    'arrowDown': LucideIcons.arrowDown,
-    'trash': LucideIcons.trash,
-    'folder': LucideIcons.folder,
-    'bookmark': LucideIcons.bookmark,
-    'clock': LucideIcons.clock,
-    'play': LucideIcons.play,
-    'pause': LucideIcons.pause,
-    'stop': LucideIcons.stopCircle,
-  };
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: TestPage(),
+    );
+  }
+}
 
-  IconData _selectedIcon = LucideIcons.home;
-  String _searchQuery = '';
+class TestPage extends StatelessWidget {
+  final List<String> departments = [
+    'Admin',
+    'Retail',
+    'Technical',
+    'Printing',
+    'Marketing',
+    'Support',
+    'Sales'
+  ];
 
   @override
   Widget build(BuildContext context) {
-    // Filter icons based on search query
-    List<String> filteredIcons = _iconMap.keys
-        .where((key) => key.toLowerCase().contains(_searchQuery.toLowerCase()))
-        .toList();
-
     return Scaffold(
-      appBar: AppBar(title: const Text("Icon Picker")),
-      body: Column(
-        children: [
-          const SizedBox(height: 20),
-
-          // Display selected icon
-          Center(
-            child: Icon(
-              _selectedIcon,
-              size: 100,
-              color: Colors.blueAccent,
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: TextField(
-              decoration: InputDecoration(
-                labelText: "Search Icon",
-                border: OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.search),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Text('Departments', style: TextStyle(color: Colors.black)),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 1,
+              child: Card(
+                elevation: 3,
+                child: ListView(
+                  shrinkWrap: true,
+                  children: departments
+                      .map((dept) => ListTile(
+                            title: Text(dept),
+                            onTap: () {},
+                          ))
+                      .toList(),
+                ),
               ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-              },
             ),
-          ),
-
-          // List of filtered icons
-          Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.all(10),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 5,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-              ),
-              itemCount: filteredIcons.length,
-              itemBuilder: (context, index) {
-                String iconName = filteredIcons[index];
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedIcon = _iconMap[iconName]!;
-                    });
-                  },
+            SizedBox(width: 16),
+            Expanded(
+              flex: 2,
+              child: Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(_iconMap[iconName], size: 40, color: Colors.black),
-                      Text(iconName, style: const TextStyle(fontSize: 12)),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Admin',
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold)),
+                          Icon(Icons.edit, color: Colors.grey),
+                        ],
+                      ),
+                      Divider(color: Colors.brown, thickness: 2),
+                      Center(
+                        child: Column(
+                          children: [
+                            CircleAvatar(
+                              radius: 40,
+                              backgroundColor: Colors.brown,
+                              child: Icon(Icons.person, color: Colors.white, size: 40),
+                            ),
+                            SizedBox(height: 10),
+                            Text('100 visited',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold)),
+                            SizedBox(height: 10),
+                            ElevatedButton(
+                              onPressed: () {},
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.black,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Text('Visit', style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
+                        ),
+                      )
                     ],
                   ),
-                );
-              },
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
+        backgroundColor: Colors.grey[300],
+        child: Icon(Icons.add, color: Colors.black),
       ),
     );
   }

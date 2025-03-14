@@ -14,256 +14,343 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  final List<String> departments = [
+    'Admin',
+    'Retail',
+    'Technical',
+    'Printing',
+    'Marketing',
+    'Support',
+    'Sales',
+  ];
+
+  String _searchQuery = '';
+  List<String> filteredDepartments = [];
+  TextEditingController searchController = TextEditingController();
+
+
+
+  @override
+  void initState() {
+    super.initState();
+    filteredDepartments = List.from(departments);
+    searchController.addListener(_filterList);
+    _pages = getPages();
+  }
+  
+  // void _filterDepartments(String query) {
+  //   setState(() {
+  //     filteredDepartment = departments
+  //         .where((dept) => dept.toLowerCase().contains(query.toLowerCase()))
+  //         .toList();
+  //   });
+  // }
+  void _filterList() {
+    String query = searchController.text.toLowerCase();
+    setState(() {
+      print(query);
+      filteredDepartments = departments
+          .where((department) => department.toLowerCase().contains(query))
+          .toList();
+      print("Filtered Departments: $filteredDepartments"); // Debugging
+    });
+  }
+
+
+
   List<Widget> getPages() {
     return [
       _buttonCRUD(),
-      const Text('Page 2'),
+      _questionCRUD(),
     ];
   }
 
   late List<Widget> _pages;
   int _selectedIndex = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    _pages = getPages();
-  }
-
   
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
   Widget _buttonCRUD() {
+    // Move `filteredDepartment` here so it updates dynamically
+    // List<String> filteredDepartment = departments.keys
+    //     .where((key) => key.toLowerCase().contains(_searchQuery.toLowerCase()))
+    //     .toList();
+
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      color: Colors.blue,
-      child: Container(
+      child: Padding(
         padding: EdgeInsets.all(30),
         child: Column(
           children: [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'Departments',
+                    style: GoogleFonts.poppins(
+                      fontSize: 20, 
+                      color: const Color.fromARGB(255, 0, 0, 0)
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => {print("Edit Button Pressed")},
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(
+                          CupertinoIcons.square_pencil_fill,
+                          color: const Color.fromARGB(255, 0, 0, 0),
+                          size: 15,
+                        ),
+                        SizedBox(width: 2),
+                        Text(
+                          "Edit",
+                          style: GoogleFonts.poppins(
+                            fontSize: 15, 
+                            color: const Color.fromARGB(255, 0, 0, 0)
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 10),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  children: [
-                    Text('Departments',
-                      style: GoogleFonts.poppins(fontSize: 20,),
-                    ),
-                  ],
-                ),
-                ElevatedButton(
-                  onPressed: () => {print("button is Pressed")},
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                Expanded(
+                  child: Column(
                     children: [
-                      Icon(CupertinoIcons.square_pencil_fill, color: const Color.fromARGB(255, 0, 0, 0)),
-                      SizedBox(width: 2),
-                      Text("Edit", style: GoogleFonts.poppins(fontSize: 15),
+                      TextField(
+                        controller: searchController,
+                        decoration: InputDecoration(
+                          labelText: "Search Department",
+                          border: OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.search),
+                        ),
+                        // onChanged: (value) {
+                        //   setState(() {
+                        //     _searchQuery = value; 
+                        //   });
+                        // },
+                      ),
+                      Card(
+                        child: SizedBox(
+                          height: 300,
+                          child: ListView.builder(
+                            itemCount: filteredDepartments.length,
+                            itemBuilder: (context, index) {
+                              print("Building ListTile: ${filteredDepartments[index]}");
+                              return ListTile(
+                                title: Text(filteredDepartments[index]),
+                                onTap: () {
+                                  print(filteredDepartments);
+                                },
+                              );
+                            },
+                          ),
+                        ),
                       ),
                     ],
                   ),
+                ),
+                SizedBox(width: 10),
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    children: [
+                      _buttonCard(),
+                      Container(
+                        width: 70,
+                        height: 60,
+                        child: ElevatedButton(
+                          onPressed: () => {},
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(15))
+                            ),
+                          ),
+                          child: Center(
+                            child: Icon(LucideIcons.plus, size: 20,),
+                          ),
+                        ),
+                      )
+                    ],
+                  )
                 ),
               ],
             ),
-            Row (
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  color: Colors.red,
-                  width: 200,
-                  height: 300,
-                  padding: EdgeInsets.only(
-                    left: 10,
-                    right: 10
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: EdgeInsets.only(
-                          top: 20
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Colors.grey,
-                            )
-                          )
-                        ),
-                        child: Text('Admin'),
-                      ),
-                      Container(
-                        padding: EdgeInsets.only(
-                          top: 20
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Colors.grey,
-                            )
-                          )
-                        ),
-                        child: Text('Admin'),
-                      ),
-                      Container(
-                        padding: EdgeInsets.only(
-                          top: 20
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Colors.grey,
-                            )
-                          )
-                        ),
-                        child: Text('Admin'),
-                      ),
-                      Container(
-                        padding: EdgeInsets.only(
-                          top: 20
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Colors.grey,
-                            )
-                          )
-                        ),
-                        child: Text('Admin'),
-                      ),
-                    ],
-                  ),
-                )
-              ]
-            )
           ],
-        )
+        ),
       ),
-      // child: Container(
-      //   padding: EdgeInsets.all(5),
-      //   decoration: BoxDecoration(
-      //     border: Border.all(color: Color.fromARGB(91, 0, 0, 0)),
-      //     borderRadius: BorderRadius.circular(15),
-      //   ),
-      //   child: InkWell(
-      //     onTap: () {
-      //       print("Button Pressed!");
-      //     },
-      //     child: Column(
-      //       mainAxisAlignment: MainAxisAlignment.center,
-      //       crossAxisAlignment: CrossAxisAlignment.center,
-      //       children: [
-      //         Expanded(
-      //           child: Container(
-      //             padding: EdgeInsets.all(10),
-      //             decoration: BoxDecoration(
-      //               borderRadius: BorderRadius.only(
-      //                 topLeft: Radius.circular(15),
-      //                 topRight: Radius.circular(15),
-      //               ),
-      //               color: Colors.white,
-      //             ),
-      //             child: LayoutBuilder(
-      //               builder: (context, constraints) {
-      //                 double screenWidth = constraints.maxWidth;
-      //                 return Column(
-      //                   mainAxisAlignment: MainAxisAlignment.spaceAround,
-      //                   crossAxisAlignment: CrossAxisAlignment.center,
-      //                   children: [
-      //                     Padding(
-      //                       padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
-      //                       child: Row(
-      //                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      //                         children: [
-      //                           Expanded(
-      //                             child: Column(
-      //                               crossAxisAlignment: CrossAxisAlignment.start,
-      //                               children: [
-      //                                 Text("Info",
-      //                                   style: GoogleFonts.poppins(
-      //                                     fontSize: 12, 
-      //                                     fontWeight: FontWeight.bold,
-      //                                   ),
-      //                                   textAlign: TextAlign.justify,
-      //                                   softWrap: true,
-      //                                 ),
-      //                                 Container(width: 30, height: 2, color: Color.fromRGBO(111, 5, 6, 1)),
-      //                               ],
-      //                             ),
-      //                           ),
-      //                           SizedBox(width: screenWidth * 0.05),
-      //                           Column(
-      //                             crossAxisAlignment: CrossAxisAlignment.end,
-      //                             children: [
-      //                               Text('0',
-      //                                 style: GoogleFonts.poppins(
-      //                                   fontSize: 20, 
-      //                                   color: Colors.black, 
-      //                                   fontWeight: FontWeight.bold
-      //                                 ),
-      //                                 textAlign: TextAlign.center
-      //                               ),
-      //                               Text('Visitors',
-      //                                 style: GoogleFonts.poppins(
-      //                                   fontSize: 8,
-      //                                   color: Colors.grey[700]
-      //                                 ), 
-      //                                 textAlign: TextAlign.center
-      //                               ),
-      //                             ],
-      //                           )
-      //                         ],
-      //                       ),
-      //                     ),
-      //                     Expanded(
-      //                       child: LayoutBuilder(
-      //                         builder: (context, constraints) {
-      //                           double availableHeight = constraints.maxHeight; // Get dynamic height
-
-      //                           return Column(
-      //                             crossAxisAlignment: CrossAxisAlignment.center,
-      //                             mainAxisAlignment: MainAxisAlignment.center,
-      //                             children: [
-      //                               SizedBox(height: availableHeight * 0.1), // Responsive spacing
-      //                               Icon(LucideIcons.info, size: availableHeight * 0.5, color: Color.fromRGBO(151, 81, 2, 1)), // Scale icon size
-      //                               SizedBox(height: availableHeight * 0.05), // Responsive spacing
-      //                             ],
-      //                           );
-      //                         },
-      //                       ),
-      //                     )
-      //                   ],
-      //                 );
-      //               },
-      //             ),
-      //           ),
-      //         ),
-      //         ElevatedButton(
-      //           onPressed: () {
-      //             print("Button Pressed!");
-      //           },
-      //           style: ElevatedButton.styleFrom(
-      //             backgroundColor: Color.fromRGBO(53, 53, 63, 1),
-      //             foregroundColor: Colors.white,
-      //             padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-      //             shape: RoundedRectangleBorder(
-      //               borderRadius: BorderRadius.only(
-      //                 bottomLeft: Radius.circular(15),
-      //                 bottomRight: Radius.circular(15),
-      //               ),
-      //             ),
-      //           ),
-      //           child: Center(
-      //             child: Text("Admin Visitor", style: GoogleFonts.poppins(fontSize: 12), textAlign: TextAlign.center),
-      //           ),
-      //         ),
-      //       ],
-      //     ),
-      //   ),
-      // ),
     );
   }
+
+  
+  Widget _buttonCard() {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Container(
+        height: 350,
+        padding: EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          border: Border.all(color: Color.fromARGB(91, 0, 0, 0)),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(15),
+                    topRight: Radius.circular(15),
+                  ),
+                  color: Colors.white,
+                ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    double screenWidth = constraints.maxWidth;
+                    return Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text("Admin",
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 20, 
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      textAlign: TextAlign.justify,
+                                      softWrap: true,
+                                    ),
+                                    Container(width: 40, height: 5, color: Color.fromRGBO(111, 5, 6, 1)),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(width: screenWidth * 0.05),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text('100',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 25, 
+                                      color: Colors.black, 
+                                      fontWeight: FontWeight.bold
+                                    ),
+                                    textAlign: TextAlign.center
+                                  ),
+                                  Text('Visitors',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 10,
+                                      color: Colors.grey[700]
+                                    ), 
+                                    textAlign: TextAlign.center
+                                  ),
+                                ],
+                              )
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              double availableHeight = constraints.maxHeight; // Get dynamic height
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(height: availableHeight * 0.1), 
+                                  Icon(LucideIcons.cakeSlice, size: availableHeight * 0.5, color: Color.fromRGBO(151, 81, 2, 1)), // Scale icon size
+                                  SizedBox(height: availableHeight * 0.05), 
+                                ],
+                              );
+                            },
+                          ),
+                        )
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color.fromRGBO(53, 53, 63, 1),
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(15),
+                    bottomRight: Radius.circular(15),
+                  ),
+                ),
+              ),
+              child: Center(
+                child: Text("Admin Visitor", style: GoogleFonts.poppins(fontSize: 12), textAlign: TextAlign.center),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _questionCRUD() {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      color: Colors.blue,
+      child: Padding(
+        padding: EdgeInsets.all(30),
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'Survey Questionaires',
+                    style: GoogleFonts.poppins(fontSize: 20, color: const Color.fromARGB(255, 0, 0, 0)),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 10),
+            
+          ],
+        ),
+      ),
+    );
+  }
+
   
   @override
   Widget build(BuildContext context) {
