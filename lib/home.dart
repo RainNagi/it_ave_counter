@@ -44,12 +44,12 @@ class _MyHomePageState extends State<MyHomePage> {
     
   }
 
-  Future<void> _sendClickData(String buttonType) async {
+  Future<void> _sendClickData(int button_id) async {
     String ip = dotenv.get('IP_ADDRESS');
     
     final url = Uri.parse('http://$ip/kpi_itave/store_click.php');
     try {
-      final response = await http.post(url, body: {'buttonType': buttonType});
+      final response = await http.post(url, body: {'button_id': button_id.toString()});
       if (response.statusCode == 200) {
         print("Click recorded successfully");
       } else {
@@ -114,14 +114,14 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  void _incrementCounter(String buttonType) {
+  void _incrementCounter(String buttonType, int button_id) {
     if (isButtonDisabled[buttonType] == true) return;
 
     setState(() {
       isButtonDisabled[buttonType] = true;
     });
 
-    _sendClickData(buttonType).then((_) => _fetchClickCounts());
+    _sendClickData(button_id).then((_) => _fetchClickCounts());
 
     Future.delayed(Duration(seconds: 3), () {
       setState(() {
@@ -130,7 +130,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Widget _buildCounterCard(String title, int count, IconData icon, Color color) {
+  Widget _buildCounterCard(String title, int count, IconData icon, int button_id) {
     
     double screenHeight = MediaQuery.of(context).size.height;
     double screenWidth = MediaQuery.of(context).size.width;
@@ -190,7 +190,7 @@ class _MyHomePageState extends State<MyHomePage> {
           borderRadius: BorderRadius.circular(15),
         ),
         child: InkWell(
-          onTap: isButtonDisabled[title]! ? null : () => _incrementCounter(title),
+          onTap: isButtonDisabled[title]! ? null : () => _incrementCounter(title,button_id),
           
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -282,7 +282,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
               ElevatedButton(
-                onPressed: isButtonDisabled[title]! ? null : () => _incrementCounter(title),
+                onPressed: isButtonDisabled[title]! ? null : () => _incrementCounter(title, button_id),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color.fromRGBO(53, 53, 63, 1),
                   foregroundColor: Colors.white,
@@ -415,9 +415,9 @@ class _MyHomePageState extends State<MyHomePage> {
               Expanded(
                 child: Row(
                   children: [
-                    Expanded(child: _buildCounterCard("Admin", adminCounter, LucideIcons.userCircle2, Colors.blue)),
+                    Expanded(child: _buildCounterCard("Admin", adminCounter, LucideIcons.userCircle2, 1)),
                     SizedBox(width: 10),
-                    Expanded(child: _buildCounterCard("Technical", technicalCounter, LucideIcons.settings, Colors.green)),
+                    Expanded(child: _buildCounterCard("Technical", technicalCounter, LucideIcons.settings, 2)),
                   ],
                 ),
               ),
@@ -425,9 +425,9 @@ class _MyHomePageState extends State<MyHomePage> {
               Expanded(
                 child: Row(
                   children: [
-                    Expanded(child: _buildCounterCard("Retail Inquiry", retailInquiryCounter, LucideIcons.shoppingCart, Colors.orange)),
+                    Expanded(child: _buildCounterCard("Retail Inquiry", retailInquiryCounter, LucideIcons.shoppingCart, 3)),
                     SizedBox(width: 10),
-                    Expanded(child: _buildCounterCard("Printing Avenue", printingAvenueCounter, LucideIcons.printer, Colors.purple)),
+                    Expanded(child: _buildCounterCard("Printing Avenue", printingAvenueCounter, LucideIcons.printer, 4)),
                   ],
                 ),
               ),

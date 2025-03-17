@@ -17,12 +17,12 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  String ip = dotenv.get('IP_ADDRESS');
   IconData iconData = IconData(0xf569, fontFamily: 'LucideIcons');
-  int? _selectedDepartment;
+  int _selectedDepartment = 0;
   List<Map<String, dynamic>> _departments = [];
   
   
-  String ip = dotenv.get('IP_ADDRESS');
   String _searchQuery = '';
 
 
@@ -33,9 +33,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _fetchDepartments() async {
-    String ip = dotenv.get('IP_ADDRESS');
     final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=buttons&action=getdepartments&filter=$_searchQuery');
-
     try {
       final response = await http.get(url);
 
@@ -54,15 +52,28 @@ class _SettingsPageState extends State<SettingsPage> {
       print("Error fetching department data: $e");
     }
   }
-
-
+  void _archiveDepartment(_selectedDepartment) async {
+    int deptId = _departments[_selectedDepartment]["button_id"];
+    print(deptId);
+    final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=buttons&action=archiveDepartment');
+    try {
+      final response = await http.post(url, body: {'departmentId': deptId.toString()});
+      if (response.statusCode == 200) {
+        _fetchDepartments();
+      } else {
+        print("Failed to archive department: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error archiving department data: $e");
+    }
+  }
 
   
 
   late List<Widget> _pages;
   int _selectedIndex = 0;
 
-  
+
 
   @override
   void dispose() {
@@ -88,27 +99,58 @@ class _SettingsPageState extends State<SettingsPage> {
                       color: const Color.fromARGB(255, 0, 0, 0)
                     ),
                   ),
-                  ElevatedButton(
-                    onPressed: () => {print("Edit Button Pressed")},
+                  Container(
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Icon(
-                          CupertinoIcons.square_pencil_fill,
-                          color: const Color.fromARGB(255, 0, 0, 0),
-                          size: 15,
+                        ElevatedButton(
+                          onPressed: () => {
+                            _archiveDepartment(_selectedDepartment),
+                          },
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Icon(
+                                CupertinoIcons.delete,
+                                color: const Color.fromARGB(255, 0, 0, 0),
+                                size: 15,
+                              ),
+                              SizedBox(width: 2),
+                              Text(
+                                "Delete",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 15, 
+                                  color: const Color.fromARGB(255, 144, 0, 0)
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        SizedBox(width: 2),
-                        Text(
-                          "Edit",
-                          style: GoogleFonts.poppins(
-                            fontSize: 15, 
-                            color: const Color.fromARGB(255, 0, 0, 0)
+                        SizedBox(width: 10,),
+                        ElevatedButton(
+                          onPressed: () => {print("Edit Button Pressed")},
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Icon(
+                                CupertinoIcons.square_pencil_fill,
+                                color: const Color.fromARGB(255, 0, 0, 0),
+                                size: 15,
+                              ),
+                              SizedBox(width: 2),
+                              Text(
+                                "Edit",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 15, 
+                                  color: const Color.fromARGB(255, 0, 0, 0)
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  ),
+                  )
+                  
                 ],
               ),
             ),
@@ -129,6 +171,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         onChanged: (value) {
                           setState(() {
                             _searchQuery = value;
+                            _selectedDepartment = 0;
                           });
                           _fetchDepartments();
                         },
@@ -161,7 +204,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     children: [                      
                       _selectedDepartment != null 
                         ? _buttonCard(_selectedDepartment!) 
-                        : _buttonCard(0) ,
+                        : _buttonCard(0),
                       Container(
                         width: 70,
                         height: 60,
@@ -247,7 +290,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text('100',
+                                  Text(_departments.length != 0 ? _departments[department]['counter_count'].toString() : "100",
                                     style: GoogleFonts.poppins(
                                       fontSize: 25, 
                                       color: Colors.black, 
