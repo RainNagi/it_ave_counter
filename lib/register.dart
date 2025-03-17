@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 
 class RegisterScreen extends StatefulWidget {
@@ -26,13 +27,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> registerUser() async {
+    String ip = dotenv.get('IP_ADDRESS');
     setState(() {
       unameError = "";
       emailError = "";
       passwordError = "";
     });
 
-    var url = Uri.parse("http://192.168.1.182/kpi_itave/auth-handler.php");
+    var url = Uri.parse("http://$ip/kpi_itave/auth-handler.php");
     var response = await http.post(url, body: {
       "action": "register",
       "uname": unameController.text,

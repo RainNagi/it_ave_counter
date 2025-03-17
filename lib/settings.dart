@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cupertino_sidebar/cupertino_sidebar.dart';
 import 'package:flutter/cupertino.dart';
+import 'dart:convert';
 import 'home.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -14,56 +17,47 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  final List<String> departments = [
-    'Admin',
-    'Retail',
-    'Technical',
-    'Printing',
-    'Marketing',
-    'Support',
-    'Sales',
-  ];
-
+  IconData iconData = IconData(0xf569, fontFamily: 'LucideIcons');
+  int? _selectedDepartment;
+  List<Map<String, dynamic>> _departments = [];
+  
+  
+  String ip = dotenv.get('IP_ADDRESS');
   String _searchQuery = '';
-  List<String> filteredDepartments = [];
-  TextEditingController searchController = TextEditingController();
-
 
 
   @override
   void initState() {
     super.initState();
-    filteredDepartments = List.from(departments);
-    searchController.addListener(_filterList);
-    _pages = getPages();
+    _fetchDepartments();
   }
+
+  void _fetchDepartments() async {
+    String ip = dotenv.get('IP_ADDRESS');
+    final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=buttons&action=getdepartments&filter=$_searchQuery');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = jsonDecode(response.body);
+
+        setState(() {
+          _departments.clear(); 
+          _departments = List<Map<String, dynamic>>.from(data);
+        });
+
+      } else {
+        print("Failed to fetch departments: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error fetching department data: $e");
+    }
+  }
+
+
+
   
-  // void _filterDepartments(String query) {
-  //   setState(() {
-  //     filteredDepartment = departments
-  //         .where((dept) => dept.toLowerCase().contains(query.toLowerCase()))
-  //         .toList();
-  //   });
-  // }
-  void _filterList() {
-    String query = searchController.text.toLowerCase();
-    setState(() {
-      print(query);
-      filteredDepartments = departments
-          .where((department) => department.toLowerCase().contains(query))
-          .toList();
-      print("Filtered Departments: $filteredDepartments"); // Debugging
-    });
-  }
-
-
-
-  List<Widget> getPages() {
-    return [
-      _buttonCRUD(),
-      _questionCRUD(),
-    ];
-  }
 
   late List<Widget> _pages;
   int _selectedIndex = 0;
@@ -72,15 +66,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   void dispose() {
-    searchController.dispose();
     super.dispose();
   }
   Widget _buttonCRUD() {
-    // Move `filteredDepartment` here so it updates dynamically
-    // List<String> filteredDepartment = departments.keys
-    //     .where((key) => key.toLowerCase().contains(_searchQuery.toLowerCase()))
-    //     .toList();
-
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Padding(
@@ -133,29 +121,30 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: Column(
                     children: [
                       TextField(
-                        controller: searchController,
                         decoration: InputDecoration(
                           labelText: "Search Department",
                           border: OutlineInputBorder(),
                           prefixIcon: const Icon(Icons.search),
                         ),
-                        // onChanged: (value) {
-                        //   setState(() {
-                        //     _searchQuery = value; 
-                        //   });
-                        // },
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value;
+                          });
+                          _fetchDepartments();
+                        },
                       ),
                       Card(
                         child: SizedBox(
                           height: 300,
                           child: ListView.builder(
-                            itemCount: filteredDepartments.length,
+                            itemCount: _departments.length,
                             itemBuilder: (context, index) {
-                              print("Building ListTile: ${filteredDepartments[index]}");
                               return ListTile(
-                                title: Text(filteredDepartments[index]),
+                                title: Text(_departments[index]['button_name'] ,),
                                 onTap: () {
-                                  print(filteredDepartments);
+                                  setState(() {
+                                    _selectedDepartment = index;
+                                  });
                                 },
                               );
                             },
@@ -169,8 +158,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 Expanded(
                   flex: 3,
                   child: Column(
-                    children: [
-                      _buttonCard(),
+                    children: [                      
+                      _selectedDepartment != null 
+                        ? _buttonCard(_selectedDepartment!) 
+                        : _buttonCard(0) ,
                       Container(
                         width: 70,
                         height: 60,
@@ -200,7 +191,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   
-  Widget _buttonCard() {
+  Widget _buttonCard(int department){
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Container(
@@ -240,7 +231,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text("Admin",
+                                    Text(_departments.length != 0 ? _departments[department]["button_name"] : "Department",
                                       style: GoogleFonts.poppins(
                                         fontSize: 20, 
                                         fontWeight: FontWeight.bold,
@@ -286,8 +277,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   SizedBox(height: availableHeight * 0.1), 
-                                  Icon(LucideIcons.cakeSlice, size: availableHeight * 0.5, color: Color.fromRGBO(151, 81, 2, 1)), // Scale icon size
-                                  SizedBox(height: availableHeight * 0.05), 
+                                  Icon(_departments.length != 0 ? IconData(0xf569, fontFamily: 'LucideIcons') : LucideIcons.cakeSlice, size: availableHeight * 0.5, color: Color.fromRGBO(151, 81, 2, 1)), // Scale icon size
+                                  SizedBox(height: availableHeight * 0.05),
+                                  
+
                                 ],
                               );
                             },
@@ -300,7 +293,10 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
             ElevatedButton(
-              onPressed: () => {},
+              onPressed: () => {
+                print(_departments),
+                print(LucideIcons.userCircle2.codePoint)
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color.fromRGBO(53, 53, 63, 1),
                 foregroundColor: Colors.white,
@@ -313,7 +309,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
               child: Center(
-                child: Text("Admin Visitor", style: GoogleFonts.poppins(fontSize: 12), textAlign: TextAlign.center),
+                child: Text(_departments.length != 0 ? _departments[department]["button_name"]+" Visitor": "Department Visitor", style: GoogleFonts.poppins(fontSize: 12), textAlign: TextAlign.center),
               ),
             ),
           ],
@@ -354,6 +350,13 @@ class _SettingsPageState extends State<SettingsPage> {
   
   @override
   Widget build(BuildContext context) {
+    List<Widget> getPages() {
+      return [
+        _buttonCRUD(),
+        _questionCRUD(),
+      ];
+    }
+    _pages = getPages();
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromRGBO(111, 5, 6, 1),
@@ -400,18 +403,13 @@ class _SettingsPageState extends State<SettingsPage> {
                           return CupertinoFloatingTabBar(
                             isVibrant: true,
                             onDestinationSelected: (value) {
-                              
-                              setState(() {
-                                _selectedIndex = value;
-                              });
+                                setState(() {
+                                  _selectedIndex = value;
+                                });
                             },
                             tabs: const [
-                              CupertinoFloatingTab(
-                                child: Text('Edit Button'),
-                              ),
-                              CupertinoFloatingTab(
-                                child: Text('Feedback'),
-                              ),
+                                CupertinoFloatingTab(child: Text('Edit Button')),
+                                CupertinoFloatingTab(child: Text('Feedback')),
                             ],
                           );
                         },
@@ -425,29 +423,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
       body: Container(
-        // child: Container(
-        //   padding: EdgeInsets.all(ResponsiveValue<double>(context, 
-        //     defaultValue: 16.0, 
-        //     conditionalValues: [
-        //       Condition.smallerThan(name: TABLET, value: 12.0),
-        //       Condition.largerThan(name: TABLET, value: 24.0),
-        //     ],
-        //   ).value),
-        //   constraints: const BoxConstraints(maxWidth: 800),
         child: _pages.elementAt(_selectedIndex), 
-          // Text(
-          //   "Settings Page Content",
-          //   style: GoogleFonts.poppins(
-          //     fontSize: ResponsiveValue<double>(context, 
-          //       defaultValue: 16.0, 
-          //       conditionalValues: [
-          //         Condition.smallerThan(name: TABLET, value: 14.0),
-          //         Condition.largerThan(name: TABLET, value: 18.0),
-          //       ],
-          //     ).value,
-          //   ),
-          // ),
-        // ),
       ),
     );
   }

@@ -6,6 +6,8 @@ import 'register.dart';
 import 'home.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 
 class LoginPage extends StatefulWidget {
   @override
@@ -17,6 +19,7 @@ class _LoginPageState extends State<LoginPage> {
   TextEditingController passwordController = TextEditingController();
   String errorMessage = "";
   bool _isObscure = true;
+  String ip = dotenv.get('IP_ADDRESS');
 
   void togglePasswordVisibility() {
     setState(() {
@@ -37,12 +40,13 @@ class _LoginPageState extends State<LoginPage> {
       );
     } 
 
-    var url = Uri.parse("http://192.168.1.182/kpi_itave/auth-handler.php");
+    var url = Uri.parse("http://$ip/kpi_itave/auth-handler.php");
     var response = await http.post(url, body: {
       "action": "login",
       "email": emailController.text,
       "password": passwordController.text,
     });
+    print(url);
 
     var data = jsonDecode(response.body);
     if (data["status"] == "success") {

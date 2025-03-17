@@ -8,6 +8,7 @@ import 'login.dart';
 import 'dart:convert';
 import 'statistics.dart';
 import 'settings.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'test1.dart';
 
 // import 'statistics.dart';
@@ -36,14 +37,17 @@ class _MyHomePageState extends State<MyHomePage> {
     "Printing Avenue": false,
   };
   @override
-  void initState() {
+  void initState(){
     super.initState();
     _fetchClickCounts();
     _loadUsername();
+    
   }
 
   Future<void> _sendClickData(String buttonType) async {
-    final url = Uri.parse('http://192.168.1.182/kpi_itave/store_click.php');
+    String ip = dotenv.get('IP_ADDRESS');
+    
+    final url = Uri.parse('http://$ip/kpi_itave/store_click.php');
     try {
       final response = await http.post(url, body: {'buttonType': buttonType});
       if (response.statusCode == 200) {
@@ -56,7 +60,8 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
   Future<void> _fetchClickCounts() async {
-    final url = Uri.parse('http://192.168.1.182/kpi_itave/store_click.php');
+    String ip = dotenv.get('IP_ADDRESS');
+    final url = Uri.parse('http://$ip/kpi_itave/store_click.php');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {

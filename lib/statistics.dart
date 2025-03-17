@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
 import 'home.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class StatisticsPage extends StatefulWidget {
   const StatisticsPage({super.key});
@@ -27,6 +28,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
   String selectedMonthName = "January"; 
   String selectedDepartment = "Admin"; 
   double barWidth = 30; 
+  String ip = dotenv.get('IP_ADDRESS');
 
   List<String> years = [];
   List<Map<String, String>> months = [];
@@ -64,14 +66,15 @@ class _StatisticsPageState extends State<StatisticsPage> {
   }
 
   Future<void> fetchYears() async {
-    final url = Uri.parse('http://192.168.1.182/kpi_itave/statistics.php?action=getYears');
+    
+    final url = Uri.parse('http://$ip/kpi_itave/statistics.php?action=getYears');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
         List<dynamic> data = jsonDecode(response.body);
         setState(() {
           years = List<String>.from(data);
-          selectedYear = years.first; // Default to first available year
+          selectedYear = years.first; 
           fetchMonths(selectedYear);
         });
       }
@@ -81,7 +84,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
   }
 
   Future<void> fetchMonths(String year) async {
-    final url = Uri.parse('http://192.168.1.182/kpi_itave/statistics.php?action=getMonths&year=$year');
+    final url = Uri.parse('http://$ip/kpi_itave/statistics.php?action=getMonths&year=$year');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -92,8 +95,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
             "value": monthValue.toString()
           }).toList();
 
-
-          
           if (months.isNotEmpty) {
             selectedMonthValue = months.first["value"]!;
             selectedMonthName = months.first["name"]!;
@@ -107,7 +108,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
   }
 
   Future<void> fetchWeekdayStatistics() async {
-    final url = Uri.parse('http://192.168.1.182/kpi_itave/statistics.php?action=getWeekdays&department=$selectedDepartment');
+    final url = Uri.parse('http://$ip/kpi_itave/statistics.php?action=getWeekdays&department=$selectedDepartment');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -126,7 +127,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
 
 
   Future<void> fetchStatistics() async {
-    final url = Uri.parse('http://192.168.1.182/kpi_itave/statistics.php?year=$selectedYear&month=$selectedMonthValue');
+    final url = Uri.parse('http://$ip/kpi_itave/statistics.php?year=$selectedYear&month=$selectedMonthValue');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {

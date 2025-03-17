@@ -90,9 +90,9 @@ class _TestPageState extends State<TestPage> {
             child: GridView.builder(
               padding: const EdgeInsets.all(10),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 5,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
+                crossAxisCount: 2,
+                crossAxisSpacing: 2,
+                mainAxisSpacing: 2,
               ),
               itemCount: filteredIcons.length,
               itemBuilder: (context, index) {
