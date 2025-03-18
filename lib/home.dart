@@ -353,7 +353,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   value: 1,
                   child: Row(
                     children: [
-                      Icon(Icons.analytics, color: const Color.fromARGB(255, 0, 0, 0)),
+                      Icon(LucideIcons.lineChart, color: const Color.fromARGB(255, 0, 0, 0)),
                       SizedBox(width: 8),
                       Text("Analytics", style: GoogleFonts.poppins(color: const Color.fromARGB(255, 0, 0, 0))),
                     ],
