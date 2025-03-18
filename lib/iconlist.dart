@@ -24,6 +24,8 @@ class IconDictionary {
     'delete': Icons.delete,
     'edit': Icons.edit,
     'visibility': Icons.visibility,
+    'package': LucideIcons.package,
+    'truck': LucideIcons.truck,
     "lucide_plus_circle": LucideIcons.plusCircle,
     'visibility_off': Icons.visibility_off,
     'lucide_home': LucideIcons.home,

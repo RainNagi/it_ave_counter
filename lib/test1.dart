@@ -10,7 +10,6 @@ class TestPage extends StatefulWidget {
 
 class _TestPageState extends State<TestPage> {
   final Map<String, IconData> _iconMap = IconDictionary.icons;
-
   IconData _selectedIcon = IconDictionary.icons['home'] ?? Icons.home;
   String _searchQuery = '';
 

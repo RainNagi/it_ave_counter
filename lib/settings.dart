@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print, deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:responsive_framework/responsive_framework.dart';
@@ -18,18 +20,19 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  final Map<String, IconData> _iconMap = IconDictionary.icons;
-  TextEditingController departmentNameController = TextEditingController();
   String ip = dotenv.get('IP_ADDRESS');
-  int _selectedDepartment = 0;
+
+  final Map<String, IconData> _iconMap = IconDictionary.icons;
   List<Map<String, dynamic>> _departments = [];
   bool _isAddingDepartment = false;
-  bool _editDepartment = false;
+  bool _isEditDepartment = false;
+  int _selectedDepartment = 0;
+  String _selectedIcon = "lucide_plus_circle";
+  
   String _newDepartmentName = "";
-  IconData? _selectedIcon;
+  TextEditingController departmentNameController = TextEditingController();
+
   String _iconSearchQuery = '';
-  
-  
   String _searchQuery = '';
 
 
@@ -39,7 +42,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _fetchDepartments();
   }
 
-  void _fetchDepartments() async {
+  Future<void> _fetchDepartments() async {
     final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=buttons&action=getdepartments&filter=$_searchQuery');
     try {
       final response = await http.get(url);
@@ -59,9 +62,8 @@ class _SettingsPageState extends State<SettingsPage> {
       print("Error fetching department data: $e");
     }
   }
-  void _archiveDepartment(_selectedDepartment) async {
-    int deptId = _departments[_selectedDepartment]["button_id"];
-    print(deptId);
+  Future<void> _archiveDepartment(selectedDepartment) async {
+    int deptId = _departments[selectedDepartment]["button_id"];
     final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=buttons&action=archiveDepartment');
     try {
       final response = await http.post(url, body: {'departmentId': deptId.toString()});
@@ -74,81 +76,99 @@ class _SettingsPageState extends State<SettingsPage> {
       print("Error archiving department data: $e");
     }
   }
-   void _showIconPickerDialog() {
+  void _addDepartment() async {
+    if (departmentNameController.text.trim().isEmpty) {
+      _showDialog("Error", "Department name cannot be empty.");
+      return;
+    }
+    final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=buttons&action=addDepartment');
+    try {
+      final response = await http.post(
+        url,
+        body: {
+          'button_name': _newDepartmentName,
+          'button_icon': _selectedIcon,
+        },
+      );
+      final responseData = jsonDecode(response.body);
+      _showDialog(
+        responseData['status'] == 'error' ? "Error" : "Success",
+        responseData['message'],
+      );
+      if (responseData['status'] == 'success') {
+        setState(() {
+          _isAddingDepartment = false;
+          _newDepartmentName = "";
+          _selectedIcon = "lucide_plus_circle";
+          departmentNameController.clear();
+        });
+      }
+    } catch (e) {
+      _showDialog("Error", "Failed to add department: $e");
+    }
+  }
+  void _editDepartment() async{
+    if (departmentNameController.text.trim().isEmpty) {
+      _showDialog("Error", "Name cannot be empty.");
+      return;
+    }
+    int deptId = _departments[_selectedDepartment]["button_id"];
+    String defaultIcon = _departments[_selectedDepartment]["button_icon"];
+
+    final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=buttons&action=editDepartment');
+    try {
+      final response = await http.post(
+        url,
+        body: {
+          'button_id' : deptId.toString(),
+          'button_name': _newDepartmentName,
+          'button_icon': _selectedIcon == "lucide_plus_circle"? defaultIcon : _selectedIcon,
+        },
+      );
+
+      final responseData = jsonDecode(response.body);
+
+      _showDialog(
+        responseData['status'] == 'error' ? "Error" : "Success",
+        responseData['message'],
+      );
+
+      if (responseData['status'] == 'success') {
+        setState(() {
+          _isEditDepartment = false;
+          _newDepartmentName = "";
+          _selectedIcon = "lucide_plus_circle";
+          departmentNameController.clear();
+          _fetchDepartments();
+        });
+      }
+    } catch (e) {
+      _showDialog("Error", "Failed to edit department: $e");
+    }
+  }
+
+  void _showDialog(String title, String message) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            List<String> filteredIcons = _iconMap.keys
-                .where((key) => key.toLowerCase().contains(_iconSearchQuery.toLowerCase()))
-                .toList();
-            return AlertDialog(
-              title: const Text("Icon Picker"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    decoration: const InputDecoration(
-                      labelText: "Search Icon",
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.search),
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        _iconSearchQuery = value;
-                        print(_iconSearchQuery);
-                        print(filteredIcons);
-                      });
-                    },
-                  ),
-                  SizedBox(height: 10),
-                  Container(
-                    width: 300,
-                    height: 300,
-                    child: GridView.builder(
-                      padding: const EdgeInsets.all(10),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 2,
-                        mainAxisSpacing: 2,
-                      ),
-                      itemCount: filteredIcons.length,
-                      itemBuilder: (context, index) {
-                        String iconName = filteredIcons[index];
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedIcon = _iconMap[iconName]!;
-                            });
-                            Navigator.pop(context);
-                          },
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(_iconMap[iconName], size: 40, color: Colors.black),
-                              Text(iconName, style: const TextStyle(fontSize: 12)),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
+        return AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text("OK"),
+            ),
+          ],
         );
       },
     );
   }
 
-  
+
 
   late List<Widget> _pages;
   int _selectedIndex = 0;
-
-
 
   @override
   void dispose() {
@@ -255,112 +275,110 @@ class _SettingsPageState extends State<SettingsPage> {
                       color: const Color.fromARGB(255, 0, 0, 0)
                     ),
                   ),
-                  _isAddingDepartment || _editDepartment ?
-                  Container(
-                    child: Row(
-                      children: [
-                        ElevatedButton(
-                          onPressed: () => setState(() {
-                            _isAddingDepartment = false;
-                            _newDepartmentName = "";
-                            _selectedIcon = null;
-                          }),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Icon(
-                                LucideIcons.xCircle,
-                                color: const Color.fromARGB(255, 156, 20, 20),
-                                size: 15,
+                  _isAddingDepartment || _isEditDepartment ?
+                  Row(
+                    children: [
+                      ElevatedButton(
+                        onPressed: () => setState(() {
+                          _isAddingDepartment = false;
+                          _isEditDepartment = false;
+                          _newDepartmentName = "";
+                          _selectedIcon = "lucide_plus_circle";
+                          departmentNameController.clear();
+                        }),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              LucideIcons.xCircle,
+                              color: const Color.fromARGB(255, 156, 20, 20),
+                              size: 15,
+                            ),
+                            SizedBox(width: 2),
+                            Text(
+                              "Cancel",
+                              style: GoogleFonts.poppins(
+                                fontSize: 15, 
+                                color: const Color.fromARGB(255, 156, 20, 20)
                               ),
-                              SizedBox(width: 2),
-                              Text(
-                                "Cancel",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 15, 
-                                  color: const Color.fromARGB(255, 156, 20, 20)
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ]
-                    )
+                      ),
+                    ]
                   )
                   :
-                  Container(
-                    child: Row(
-                      children: [
-                        ElevatedButton(
-                          onPressed: () async {
-                            
-                            bool? confirmDelete = await showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  title: Text("Confirm Delete"),
-                                  content: Text("Are you sure you want to delete this?"),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.of(context).pop(false),
-                                      child: Text("Cancel"),
-                                    ),
-                                    TextButton(
-                                      onPressed: () => Navigator.of(context).pop(true),
-                                      child: Text("Delete", style: TextStyle(color: Colors.red)),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                            
-                            if (confirmDelete == true) {
-                              _archiveDepartment(_selectedDepartment);
-                            }
-                          },
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Icon(
-                                CupertinoIcons.delete,
-                                color: Color.fromARGB(255, 0, 0, 0),
-                                size: 15,
+                  Row(
+                    children: [
+                      ElevatedButton(
+                        onPressed: () async {
+                          bool? confirmDelete = await showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text("Confirm Delete"),
+                                content: Text("Are you sure you want to delete this?"),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(false),
+                                    child: Text("Cancel"),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(true),
+                                    child: Text("Delete", style: TextStyle(color: Colors.red)),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                          if (confirmDelete == true) {
+                            _archiveDepartment(_selectedDepartment);
+                          }
+                        },
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              CupertinoIcons.delete,
+                              color: Color.fromARGB(255, 0, 0, 0),
+                              size: 15,
+                            ),
+                            SizedBox(width: 2),
+                            Text(
+                              "Delete",
+                              style: GoogleFonts.poppins(
+                                fontSize: 15, 
+                                color: Color.fromARGB(255, 144, 0, 0),
                               ),
-                              SizedBox(width: 2),
-                              Text(
-                                "Delete",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 15, 
-                                  color: Color.fromARGB(255, 144, 0, 0),
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        SizedBox(width: 10,),
-                        ElevatedButton(
-                          onPressed: () => {print("Edit Button Pressed")},
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Icon(
-                                LucideIcons.edit,
-                                color: const Color.fromARGB(255, 0, 0, 0),
-                                size: 15,
+                      ),
+                      SizedBox(width: 10,),
+                      ElevatedButton(
+                        onPressed: () => setState(() {
+                          _isEditDepartment = true;
+                        }),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              LucideIcons.edit,
+                              color: const Color.fromARGB(255, 0, 0, 0),
+                              size: 15,
+                            ),
+                            SizedBox(width: 2),
+                            Text(
+                              "Edit",
+                              style: GoogleFonts.poppins(
+                                fontSize: 15, 
+                                color: const Color.fromARGB(255, 0, 0, 0)
                               ),
-                              SizedBox(width: 2),
-                              Text(
-                                "Edit",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 15, 
-                                  color: const Color.fromARGB(255, 0, 0, 0)
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   )
                   
                 ],
@@ -389,22 +407,36 @@ class _SettingsPageState extends State<SettingsPage> {
                         },
                       ),
                       Card(
-                        child: SizedBox(
-                          height: 300,
-                          child: ListView.builder(
-                            itemCount: _departments.length,
-                            itemBuilder: (context, index) {
-                              return ListTile(
-                                title: Text(_departments[index]['button_name'] ,),
-                                onTap: () {
-                                  setState(() {
-                                    _selectedDepartment = index;
-                                  });
+                        child: Stack(
+                          children: [
+                            SizedBox(
+                              height: 300,
+                              child: ListView.builder(
+                                itemCount: _departments.length,
+                                itemBuilder: (context, index) {
+                                  return ListTile(
+                                    title: Text(_departments[index]['button_name'] ,),
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedDepartment = index;
+                                        print(_selectedDepartment);
+                                      });
+                                    },
+                                  );
                                 },
-                              );
-                            },
-                          ),
-                        ),
+                              ),
+                            ),
+                            if (_isAddingDepartment || _isEditDepartment)
+                              Positioned.fill(
+                                child: AbsorbPointer(
+                                  absorbing: true, 
+                                  child: Container(
+                                    color: Colors.black.withOpacity(0.1), 
+                                  ),
+                                ),
+                              ),
+                          ],
+                        )
                       ),
                     ],
                   ),
@@ -414,19 +446,41 @@ class _SettingsPageState extends State<SettingsPage> {
                   flex: 3,
                   child: Column(
                     children: [                      
-                      _selectedDepartment != null 
-                        ? _buttonCard(_selectedDepartment!) 
+                      _selectedDepartment != 0 
+                        ? _buttonCard(_selectedDepartment) 
                         : _buttonCard(0),
-                      _isAddingDepartment ?
-                      Container(
+                      _isAddingDepartment || _isEditDepartment?
+                      SizedBox(
                         width: 150,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: () => setState(() {
-                          _isAddingDepartment = false;
-                          _newDepartmentName = "";
-                          _selectedIcon = null;
-                        }),
+                          onPressed: () async {
+                            bool? confirmAdd = await showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  // ignore: prefer_interpolation_to_compose_strings
+                                  title: _isAddingDepartment? Text("Adding Department") :Text("Editing "+_departments[_selectedDepartment]["button_name"]+ " Department"),
+                                  content: Text("Are you sure you want to save this?"),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(false),
+                                      child: Text("No"),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(true),
+                                      child: Text("Yes", style: TextStyle(color: Colors.red)),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                            if (confirmAdd == true) {
+                              _isAddingDepartment? _addDepartment() : _editDepartment();
+                              _fetchDepartments();
+                              
+                            }
+                          },
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -449,14 +503,14 @@ class _SettingsPageState extends State<SettingsPage> {
                         )
                       )
                       :
-                      Container(
+                      SizedBox(
                         width: 70,
                         height: 60,
                         child: ElevatedButton(
                           onPressed: () => setState(() {
                              _isAddingDepartment = true;
                             _newDepartmentName = "";
-                            _selectedIcon = null;
+                            // _selectedIcon = null;
                           }),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.grey,
@@ -522,13 +576,13 @@ class _SettingsPageState extends State<SettingsPage> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                     _isAddingDepartment
-                                      ? Container(
+                                     _isAddingDepartment || _isEditDepartment
+                                      ? SizedBox(
                                         width: 400,
                                         child: Column(
                                           children: [
                                             TextField(
-                                              decoration: InputDecoration(labelText: "Department Name"),
+                                              decoration: InputDecoration(labelText: _isEditDepartment ? _departments[department]["button_name"] : "Department Name"),
                                               controller: departmentNameController,
                                               onChanged: (value) => setState(() => _newDepartmentName = value),
                                             ),
@@ -537,7 +591,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                         )
                                       )
                                       : Text(
-                                          _departments.isNotEmpty ? _departments[department!]["button_name"] : "Department",
+                                          _departments.isNotEmpty ? _departments[department]["button_name"] : "Department",
                                           style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold),
                                         ),
                                     Container(width: 40, height: 5, color: Color.fromRGBO(111, 5, 6, 1)),
@@ -558,7 +612,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                     ),
                                     textAlign: TextAlign.center
                                   ) :
-                                  Text(_departments.length != 0 ? _departments[department]['counter_count'].toString() : "100",
+                                  Text(_departments.isNotEmpty ? _departments[department]['counter_count'].toString() : "100",
                                     style: GoogleFonts.poppins(
                                       fontSize: 25, 
                                       color: Colors.black, 
@@ -588,16 +642,18 @@ class _SettingsPageState extends State<SettingsPage> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   SizedBox(height: availableHeight * 0.1),
-                                  _isAddingDepartment ?
+                                  _isAddingDepartment || _isEditDepartment?
                                   GestureDetector(
-                                    onTap: () => _showIconPickerDialog(),
+                                    onTap:()=> setState(() {
+                                      _showIconPickerDialog();
+                                    }),
                                     child: Icon(
-                                      _selectedIcon ?? LucideIcons.plusCircle,
-                                      size: 80,
-                                      color: Colors.brown,
+                                      _selectedIcon == 'lucide_plus_circle' ? IconDictionary.icons[_departments[department]["button_icon"]] :_iconMap[_selectedIcon],
+                                      size: availableHeight * 0.5,
+                                      color: Color.fromRGBO(151, 81, 2, 1),
                                     ),
                                   ):
-                                  Icon(_departments.length != 0 ? IconDictionary.icons[_departments[department]["button_icon"]] : LucideIcons.plusCircle, size: availableHeight * 0.5, color: Color.fromRGBO(151, 81, 2, 1)), // Scale icon size
+                                  Icon(_departments.isNotEmpty ? IconDictionary.icons[_departments[department]["button_icon"]] : LucideIcons.plusCircle, size: availableHeight * 0.5, color: Color.fromRGBO(151, 81, 2, 1)), // Scale icon size
                                   SizedBox(height: availableHeight * 0.05),
                                 ],
                               );
@@ -612,8 +668,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             ElevatedButton(
               onPressed: () => {
-                print(_departments),
-                print(LucideIcons.userCircle2.codePoint)
+                // print(_departments)
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color.fromRGBO(53, 53, 63, 1),
@@ -628,10 +683,10 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               child: Center(
                 child: 
-                _isAddingDepartment?
-                Text(_newDepartmentName+" Visitor", style: GoogleFonts.poppins(fontSize: 12), textAlign: TextAlign.center)
+                _isAddingDepartment || _isEditDepartment?
+                Text("$_newDepartmentName Visitor", style: GoogleFonts.poppins(fontSize: 12), textAlign: TextAlign.center)
                 :
-                Text(_departments.length != 0 ? _departments[department]["button_name"]+" Visitor": "Department Visitor", style: GoogleFonts.poppins(fontSize: 12), textAlign: TextAlign.center),
+                Text(_departments.isNotEmpty ? _departments[department]["button_name"]+" Visitor": "Department Visitor", style: GoogleFonts.poppins(fontSize: 12), textAlign: TextAlign.center),
               ),
             ),
           ],
@@ -639,7 +694,73 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
     );
   }
-
+  void _showIconPickerDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            List<String> filteredIcons = _iconMap.keys
+                .where((key) => key.toLowerCase().contains(_iconSearchQuery.toLowerCase()) && key != "lucide_plus_circle")
+                .toList();
+            return AlertDialog(
+              title: const Text("Icon Picker"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    decoration: const InputDecoration(
+                      labelText: "Search Icon",
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _iconSearchQuery = value;
+                      });
+                    },
+                  ),
+                  SizedBox(height: 10),
+                  SizedBox(
+                    width: 300,
+                    height: 300,
+                    child: GridView.builder(
+                      padding: const EdgeInsets.all(10),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 2,
+                        mainAxisSpacing: 2,
+                      ),
+                      itemCount: filteredIcons.length,
+                      itemBuilder: (context, index) {
+                        String iconName = filteredIcons[index];
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedIcon = iconName;
+                            });
+                            _fetchDepartments();
+                            Navigator.pop(context);
+                          },
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(_iconMap[iconName], size: 40, color: Colors.black),
+                              Text(iconName, style: const TextStyle(fontSize: 12)),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
   Widget _questionCRUD() {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),

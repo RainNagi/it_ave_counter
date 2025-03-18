@@ -1,119 +1,484 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'dart:async';
+import 'login.dart';
+import 'dart:convert';
+import 'statistics.dart';
+import 'settings.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'test1.dart';
+import 'iconlist.dart';
 
-void main() {
-  runApp(MyApp());
+// import 'statistics.dart';
+
+class MyHomePage extends StatefulWidget {
+  final String title;
+  const MyHomePage({super.key, required this.title});
+
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class MyApp extends StatelessWidget {
+
+
+class _MyHomePageState extends State<MyHomePage> {
+  String ip = dotenv.get('IP_ADDRESS');
+  List<Map<String, dynamic>> _departments = [];
+  final Map<String, IconData> _iconMap = IconDictionary.icons;
+  String username = "User"; // Default username
+  int adminCounter = 0;
+  int technicalCounter = 0;
+  int retailInquiryCounter = 0;
+  int printingAvenueCounter = 0;
+  
+  Map<String, bool> isButtonDisabled = {
+    "Admin": false,
+    "Technical": false,
+    "Retail Inquiry": false,
+    "Printing Avenue": false,
+  };
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: TestPage(),
+  void initState(){
+    super.initState();
+    _fetchClickCounts();
+    _loadUsername(); 
+    _fetchDepartments();
+  }
+  Future<void> _fetchDepartments() async {
+    final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=buttons&action=getdepartments');
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = jsonDecode(response.body);
+
+        setState(() {
+          _departments.clear(); 
+          _departments = List<Map<String, dynamic>>.from(data);
+        });
+
+      } else {
+        print("Failed to fetch departments: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error fetching department data: $e");
+    }
+  }
+
+  Future<void> _sendClickData(int button_id) async {
+    String ip = dotenv.get('IP_ADDRESS');
+    
+    final url = Uri.parse('http://$ip/kpi_itave/store_click.php');
+    try {
+      final response = await http.post(url, body: {'button_id': button_id.toString()});
+      if (response.statusCode == 200) {
+        print("Click recorded successfully");
+      } else {
+        print("Failed to record click: \${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error sending click data: $e");
+    }
+  }
+  Future<void> _fetchClickCounts() async {
+    String ip = dotenv.get('IP_ADDRESS');
+    final url = Uri.parse('http://$ip/kpi_itave/store_click.php');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        setState(() {
+          adminCounter = int.tryParse(data["Admin"].toString()) ?? 0;
+          technicalCounter = int.tryParse(data["Technical"].toString()) ?? 0;
+          retailInquiryCounter = int.tryParse(data["Retail Inquiry"].toString()) ?? 0;
+          printingAvenueCounter = int.tryParse(data["Printing Avenue"].toString()) ?? 0;
+        });
+      }
+    } catch (e) {
+      print("Error fetching counts: $e");
+    }
+  }
+  Future<void> _loadUsername() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      username = prefs.getString("username") ?? "User";
+    });
+  }
+
+
+  void _logout() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => LoginPage()),
     );
   }
-}
 
-class TestPage extends StatelessWidget {
-  final List<String> departments = [
-    'Admin',
-    'Retail',
-    'Technical',
-    'Printing',
-    'Marketing',
-    'Support',
-    'Sales'
-  ];
+  void _goToStatistics(){
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => StatisticsPage())
+    );
+  }
+  void _goToSettings(){
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => SettingsPage())
+    );
+  }
+  void _goToTest(){
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => TestPage())
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Text('Departments', style: TextStyle(color: Colors.black)),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 1,
-              child: Card(
-                elevation: 3,
-                child: ListView(
-                  shrinkWrap: true,
-                  children: departments
-                      .map((dept) => ListTile(
-                            title: Text(dept),
-                            onTap: () {},
-                          ))
-                      .toList(),
-                ),
-              ),
-            ),
-            SizedBox(width: 16),
-            Expanded(
-              flex: 2,
-              child: Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  void _incrementCounter(String buttonType, int button_id) {
+    if (isButtonDisabled[buttonType] == true) return;
+
+    setState(() {
+      isButtonDisabled[buttonType] = true;
+    });
+
+    _sendClickData(button_id).then((_) => _fetchClickCounts());
+
+    Future.delayed(Duration(seconds: 3), () {
+      setState(() {
+        isButtonDisabled[buttonType] = false;
+      });
+    });
+  }
+
+  Widget _buildCounterCard(String title, int count, String icon, int button_id) {
+    
+    double screenHeight = MediaQuery.of(context).size.height;
+    double screenWidth = MediaQuery.of(context).size.width;
+    double buttonFontSize = 16;
+    double titleFontSize = 18;
+    double counterFontSize = 30;
+    double visitorFont = 10;
+    // double iconSize = 64;
+    // double horizontalPadding = 20;
+    if (screenHeight < 850) {
+      if (screenWidth < 500) {
+        buttonFontSize = 10;
+        titleFontSize = 10;
+        counterFontSize = 12;
+        visitorFont = 5;
+        // iconSize = 64;
+        // horizontalPadding = 5;
+      } else if (screenWidth < 600) {
+        buttonFontSize = 15;
+        titleFontSize = 20;
+        counterFontSize = 30;
+        visitorFont = 12;
+        // iconSize = 70;
+        // horizontalPadding = 5;
+      }
+    } else {
+        if (screenWidth < 500) {
+        buttonFontSize = 16;
+        titleFontSize = 15;
+        counterFontSize = 19;
+        visitorFont = 5;
+        // iconSize = 64;
+        // horizontalPadding = 5;
+      } else if (screenWidth < 650) {
+        buttonFontSize = 15;
+        titleFontSize = 20;
+        counterFontSize = 30;
+        visitorFont = 12;
+        // iconSize = 100;
+        // horizontalPadding = 5;
+      } else {
+        buttonFontSize = 20;
+        titleFontSize = 20;
+        counterFontSize = 40;
+        visitorFont = 13;
+        // iconSize = 60;
+        // horizontalPadding = 20;
+      }
+    }
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Container(
+        padding: EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          border: Border.all(color: Color.fromARGB(91, 0, 0, 0)),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: InkWell(
+          onTap: isButtonDisabled[title]! ? null : () => _incrementCounter(title,button_id),
+          
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(15),
+                      topRight: Radius.circular(15),
+                    ),
+                    color: Colors.white,
+                  ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      double screenWidth = constraints.maxWidth;
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text('Admin',
-                              style: TextStyle(
-                                  fontSize: 20, fontWeight: FontWeight.bold)),
-                          Icon(Icons.edit, color: Colors.grey),
-                        ],
-                      ),
-                      Divider(color: Colors.brown, thickness: 2),
-                      Center(
-                        child: Column(
-                          children: [
-                            CircleAvatar(
-                              radius: 40,
-                              backgroundColor: Colors.brown,
-                              child: Icon(Icons.person, color: Colors.white, size: 40),
-                            ),
-                            SizedBox(height: 10),
-                            Text('100 visited',
-                                style: TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold)),
-                            SizedBox(height: 10),
-                            ElevatedButton(
-                              onPressed: () {},
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(title,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: titleFontSize, 
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        textAlign: TextAlign.justify,
+                                        softWrap: true,
+                                      ),
+                                      Container(width: 30, height: 2, color: Color.fromRGBO(111, 5, 6, 1)),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              child: Text('Visit', style: TextStyle(color: Colors.white)),
+                                SizedBox(width: screenWidth * 0.05),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text('$count',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: counterFontSize, 
+                                        color: Colors.black, 
+                                        fontWeight: FontWeight.bold
+                                      ),
+                                      textAlign: TextAlign.center
+                                    ),
+                                    Text('Visitors',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: visitorFont,
+                                        color: Colors.grey[700]
+                                      ), 
+                                      textAlign: TextAlign.center
+                                    ),
+                                  ],
+                                )
+                              ],
                             ),
-                          ],
-                        ),
-                      )
-                    ],
+                          ),
+                          Expanded(
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                double availableHeight = constraints.maxHeight; // Get dynamic height
+
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(height: availableHeight * 0.1), // Responsive spacing
+                                    Icon(_iconMap[icon], size: availableHeight * 0.5, color: Color.fromRGBO(151, 81, 2, 1)), // Scale icon size
+                                    SizedBox(height: availableHeight * 0.05), // Responsive spacing
+                                  ],
+                                );
+                              },
+                            ),
+                          )
+                        ],
+                      );
+                    },
                   ),
                 ),
               ),
+              ElevatedButton(
+                onPressed: isButtonDisabled[title]! ? null : () => _incrementCounter(title, button_id),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color.fromRGBO(53, 53, 63, 1),
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(15),
+                      bottomRight: Radius.circular(15),
+                    ),
+                  ),
+                ),
+                child: Center(
+                  child: Text("$title Visitor", style: GoogleFonts.poppins(fontSize: buttonFontSize), textAlign: TextAlign.center),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double containerWidth = screenWidth * (screenWidth < 700?  1 : 0.8);
+    double containerHeight = MediaQuery.of(context).size.height * 0.9;
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Color.fromRGBO(111, 5, 6, 1),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            ClipOval(
+              child: Container(
+                color: Colors.white,
+                child: Image.asset(
+                  'assets/image/logo.png',
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            Text(widget.title, style: GoogleFonts.poppins(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+            PopupMenuButton<int>(
+              icon: Icon(Icons.account_circle, color: Colors.white, size: 30),
+              onSelected: (value) {
+                if (value == 3) {
+                  _logout();
+                } else if (value == 2) {
+                  _goToSettings();
+                } else if (value == 1) {
+                  _goToStatistics();
+                } else if (value == 4) {
+                  _goToTest();
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 0,
+                  child: Text(username, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+                ),
+                PopupMenuDivider(),
+                PopupMenuItem(
+                  value: 1,
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.lineChart, color: const Color.fromARGB(255, 0, 0, 0)),
+                      SizedBox(width: 8),
+                      Text("Analytics", style: GoogleFonts.poppins(color: const Color.fromARGB(255, 0, 0, 0))),
+                    ],
+                  ),
+                ),
+                PopupMenuDivider(),
+                PopupMenuItem(
+                  value: 2,
+                  child: Row(
+                    children: [
+                      Icon(Icons.settings, color: const Color.fromARGB(255, 0, 0, 0)),
+                      SizedBox(width: 8),
+                      Text("Settings", style: GoogleFonts.poppins(color: const Color.fromARGB(255, 0, 0, 0))),
+                    ],
+                  ),
+                ),
+                PopupMenuDivider(),
+                PopupMenuItem(
+                  value: 3,
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text("Logout", style: GoogleFonts.poppins(color: Colors.red)),
+                    ],
+                  ),
+                ),
+                PopupMenuDivider(),
+                PopupMenuItem(
+                  value: 4,
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.activity, color: const Color.fromARGB(255, 0, 0, 0)),
+                      SizedBox(width: 8),
+                      Text("Test", style: GoogleFonts.poppins(color: const Color.fromARGB(255, 0, 0, 0))),
+                    ],
+                  ),
+                ),
+                
+              ],
             ),
           ],
         ),
+        centerTitle: false,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: Colors.grey[300],
-        child: Icon(Icons.add, color: Colors.black),
+      body: Center(
+        child: Container(
+          width: containerWidth,
+          height: containerHeight,
+          // color: Colors.red,
+          padding: EdgeInsets.all(0),
+          // decoration: BoxDecoration(
+          //   color: Colors.white,
+          //   borderRadius: BorderRadius.circular(20),
+          //   boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, spreadRadius: 2)],
+          // ),
+          child: Column(
+            children: [
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.all(10),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2, 
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 1.5,
+                  ),
+                  itemCount: _departments.length, 
+                  itemBuilder: (context, index) {
+                    return _buildCounterCard(
+                      _departments[index]["button_name"] as String,
+                      _departments[index]["counter_count"] == null? 0 : _departments[index]["counter_count"]  as int,
+                      _departments[index]["button_icon"] as String,
+                      _departments[index]["button_id"] as int,
+                    );
+                  },
+                ),
+              ), 
+              SizedBox(height: 20),
+              Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        // _goToCustomerFeedBack();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: Text("Feedback", style: GoogleFonts.poppins(fontSize: 18)),
+                    ),
+                  ],
+                )
+              ),     
+            ],
+          ),
+        ),
       ),
     );
   }
