@@ -1,10 +1,11 @@
-// ignore_for_file: avoid_print, deprecated_member_use
+// ignore_for_file: avoid_print, deprecated_member_use, prefer_final_fields, prefer_interpolation_to_compose_strings
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:rating_and_feedback_collector/rating_and_feedback_collector.dart';
 import 'package:cupertino_sidebar/cupertino_sidebar.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:convert';
@@ -20,28 +21,38 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  String ip = dotenv.get('IP_ADDRESS');
-
+  String ip = dotenv.get('IP_ADDRESS');  
+  
   final Map<String, IconData> _iconMap = IconDictionary.icons;
+  String _iconSearchQuery = '';
+  String _selectedIcon = "lucide_plus_circle";
+
+  // Button CRUD
   List<Map<String, dynamic>> _departments = [];
   bool _isAddingDepartment = false;
-  bool _isEditDepartment = false;
+  bool _isEditingDepartment = false;
   int _selectedDepartment = 0;
-  String _selectedIcon = "lucide_plus_circle";
-  
   String _newDepartmentName = "";
   TextEditingController departmentNameController = TextEditingController();
-
-  String _iconSearchQuery = '';
   String _searchQuery = '';
 
+  // question CRUD
+  List<Map<String, dynamic>> _questions = [];
+  bool _isAddingQuestion = false;
+  bool _isEditingQuestion = false;
+  int _selectedQuestion = 1;
+  double _rating = 2.5;
+  TextEditingController _questionController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    _fetchQuestions();
     _fetchDepartments();
+    print(_questions);
   }
 
+  // button CRUD
   Future<void> _fetchDepartments() async {
     final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=buttons&action=getdepartments&filter=$_searchQuery');
     try {
@@ -62,13 +73,25 @@ class _SettingsPageState extends State<SettingsPage> {
       print("Error fetching department data: $e");
     }
   }
-  Future<void> _archiveDepartment(selectedDepartment) async {
+  Future<void> _archiveDepartment(int selectedDepartment) async {
+    if (selectedDepartment < 0 || selectedDepartment >= _departments.length) {
+      print("Invalid department index.");
+      return;
+    }
     int deptId = _departments[selectedDepartment]["button_id"];
     final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=buttons&action=archiveDepartment');
     try {
       final response = await http.post(url, body: {'departmentId': deptId.toString()});
       if (response.statusCode == 200) {
-        _fetchDepartments();
+        await _fetchDepartments();
+
+        if (_departments.isEmpty) {
+          _selectedDepartment = 0; 
+        } else if (_selectedDepartment >= _departments.length) {
+          _selectedDepartment = _departments.length - 1; 
+        }
+
+        setState(() {}); // Update UI
       } else {
         print("Failed to archive department: ${response.statusCode}");
       }
@@ -114,7 +137,6 @@ class _SettingsPageState extends State<SettingsPage> {
     }
     int deptId = _departments[_selectedDepartment]["button_id"];
     String defaultIcon = _departments[_selectedDepartment]["button_icon"];
-
     final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=buttons&action=editDepartment');
     try {
       final response = await http.post(
@@ -125,17 +147,14 @@ class _SettingsPageState extends State<SettingsPage> {
           'button_icon': _selectedIcon == "lucide_plus_circle"? defaultIcon : _selectedIcon,
         },
       );
-
       final responseData = jsonDecode(response.body);
-
       _showDialog(
         responseData['status'] == 'error' ? "Error" : "Success",
         responseData['message'],
       );
-
       if (responseData['status'] == 'success') {
         setState(() {
-          _isEditDepartment = false;
+          _isEditingDepartment = false;
           _newDepartmentName = "";
           _selectedIcon = "lucide_plus_circle";
           departmentNameController.clear();
@@ -146,6 +165,97 @@ class _SettingsPageState extends State<SettingsPage> {
       _showDialog("Error", "Failed to edit department: $e");
     }
   }
+
+  // question CRUD
+  Future<void> _fetchQuestions() async {
+    print("calling this function");
+    final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=questions&action=getQuestions');
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final response = await http.get(url);
+
+        if (response.statusCode == 200) {
+          List<dynamic> data = jsonDecode(response.body);
+
+          setState(() {
+            _questions.clear(); 
+            _questions = List<Map<String, dynamic>>.from(data);
+          });
+
+        } else {
+          print("Failed to fetch questions: ${response.statusCode}");
+        }
+      } else {
+        print("Failed to fetch questions: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error fetching questions data: $e");
+    }
+  }
+  void _addQuestion() async {
+    if (_questionController.text.trim().isEmpty) {
+      _showDialog("Error", "Question cannot be empty.");
+      return;
+    }
+    final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=questions&action=addQuestion');
+    try {
+      final response = await http.post(
+        url,
+        body: {
+          'question': _questionController.text,
+        },
+      );
+      final responseData = jsonDecode(response.body);
+      _showDialog(
+        responseData['status'] == 'error' ? "Error" : "Success",
+        responseData['message'],
+      );
+      if (responseData['status'] == 'success') {
+        setState(() {
+          _isAddingQuestion = false;
+          _questionController.clear();
+          _fetchQuestions();
+        });
+      }
+    } catch (e) {
+      _showDialog("Error", "Failed to add department: $e");
+    }
+  }
+  void _editQuestion() async{
+    // if (_questionController.text.trim().isEmpty) {
+    //   _showDialog("Error", "Name cannot be empty.");
+    //   return;
+    // }
+    // int quesId = _questions[_selectedQuestion-1]["button_id"];
+    // // String defaultIcon = _departments[_selectedDepartment]["button_icon"];
+    // final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=questions&action=editQuestion');
+    // try {
+    //   final response = await http.post(
+    //     url,
+    //     body: {
+    //       'question_id' : quesId.toString(),
+    //       'question' : _questionController.text
+    //     },
+    //   );
+    //   final responseData = jsonDecode(response.body);
+    //   _showDialog(
+    //     responseData['status'] == 'error' ? "Error" : "Success",
+    //     responseData['message'],
+    //   );
+    //   if (responseData['status'] == 'success') {
+    //     setState(() {
+    //       _isEditingQuestion = false;
+    //       _questionController.clear();
+    //       _fetchQuestions();
+    //     });
+    //   }
+    // } catch (e) {
+    //   _showDialog("Error", "Failed to edit department: $e");
+    // }
+  }
+
 
   void _showDialog(String title, String message) {
     showDialog(
@@ -275,13 +385,14 @@ class _SettingsPageState extends State<SettingsPage> {
                       color: const Color.fromARGB(255, 0, 0, 0)
                     ),
                   ),
-                  _isAddingDepartment || _isEditDepartment ?
+                  _departments.isEmpty ? Text("") :
+                  _isAddingDepartment || _isEditingDepartment ?
                   Row(
                     children: [
                       ElevatedButton(
                         onPressed: () => setState(() {
                           _isAddingDepartment = false;
-                          _isEditDepartment = false;
+                          _isEditingDepartment = false;
                           _newDepartmentName = "";
                           _selectedIcon = "lucide_plus_circle";
                           departmentNameController.clear();
@@ -357,7 +468,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       SizedBox(width: 10,),
                       ElevatedButton(
                         onPressed: () => setState(() {
-                          _isEditDepartment = true;
+                          _isEditingDepartment = true;
                         }),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -419,14 +530,13 @@ class _SettingsPageState extends State<SettingsPage> {
                                     onTap: () {
                                       setState(() {
                                         _selectedDepartment = index;
-                                        print(_selectedDepartment);
                                       });
                                     },
                                   );
                                 },
                               ),
                             ),
-                            if (_isAddingDepartment || _isEditDepartment)
+                            if (_isAddingDepartment || _isEditingDepartment)
                               Positioned.fill(
                                 child: AbsorbPointer(
                                   absorbing: true, 
@@ -449,7 +559,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       _selectedDepartment != 0 
                         ? _buttonCard(_selectedDepartment) 
                         : _buttonCard(0),
-                      _isAddingDepartment || _isEditDepartment?
+                      _isAddingDepartment || _isEditingDepartment?
                       SizedBox(
                         width: 150,
                         height: 50,
@@ -576,13 +686,13 @@ class _SettingsPageState extends State<SettingsPage> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                     _isAddingDepartment || _isEditDepartment
+                                     _isAddingDepartment || _isEditingDepartment
                                       ? SizedBox(
                                         width: 400,
                                         child: Column(
                                           children: [
                                             TextField(
-                                              decoration: InputDecoration(labelText: _isEditDepartment ? _departments[department]["button_name"] : "Department Name"),
+                                              decoration: InputDecoration(labelText: _isEditingDepartment ? _departments[department]["button_name"] : "Department Name"),
                                               controller: departmentNameController,
                                               onChanged: (value) => setState(() => _newDepartmentName = value),
                                             ),
@@ -636,19 +746,18 @@ class _SettingsPageState extends State<SettingsPage> {
                           child: LayoutBuilder(
                             builder: (context, constraints) {
                               double availableHeight = constraints.maxHeight; // Get dynamic height
-
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   SizedBox(height: availableHeight * 0.1),
-                                  _isAddingDepartment || _isEditDepartment?
+                                  _isAddingDepartment || _isEditingDepartment?
                                   GestureDetector(
                                     onTap:()=> setState(() {
                                       _showIconPickerDialog();
                                     }),
                                     child: Icon(
-                                      _selectedIcon == 'lucide_plus_circle' ? IconDictionary.icons[_departments[department]["button_icon"]] :_iconMap[_selectedIcon],
+                                      _selectedIcon == 'lucide_plus_circle' && _isEditingDepartment ? IconDictionary.icons[_departments[department]["button_icon"]] :_iconMap[_selectedIcon],
                                       size: availableHeight * 0.5,
                                       color: Color.fromRGBO(151, 81, 2, 1),
                                     ),
@@ -668,7 +777,6 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             ElevatedButton(
               onPressed: () => {
-                // print(_departments)
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color.fromRGBO(53, 53, 63, 1),
@@ -683,7 +791,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               child: Center(
                 child: 
-                _isAddingDepartment || _isEditDepartment?
+                _isAddingDepartment || _isEditingDepartment?
                 Text("$_newDepartmentName Visitor", style: GoogleFonts.poppins(fontSize: 12), textAlign: TextAlign.center)
                 :
                 Text(_departments.isNotEmpty ? _departments[department]["button_name"]+" Visitor": "Department Visitor", style: GoogleFonts.poppins(fontSize: 12), textAlign: TextAlign.center),
@@ -761,10 +869,11 @@ class _SettingsPageState extends State<SettingsPage> {
       },
     );
   }
+
   Widget _questionCRUD() {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      color: Colors.blue,
+      // color: Colors.blue,
       child: Padding(
         padding: EdgeInsets.all(30),
         child: Column(
@@ -779,13 +888,380 @@ class _SettingsPageState extends State<SettingsPage> {
                     'Survey Questionaires',
                     style: GoogleFonts.poppins(fontSize: 20, color: const Color.fromARGB(255, 0, 0, 0)),
                   ),
+                  _departments.isEmpty ? Text("") :
+                  _isAddingQuestion || _isEditingQuestion ?
+                  Row(
+                    children: [
+                      ElevatedButton(
+                        onPressed: () => setState(() {
+                          _isAddingQuestion = false;
+                          _isEditingQuestion = false;
+                        }),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              LucideIcons.xCircle,
+                              color: const Color.fromARGB(255, 156, 20, 20),
+                              size: 15,
+                            ),
+                            SizedBox(width: 2),
+                            Text(
+                              "Cancel",
+                              style: GoogleFonts.poppins(
+                                fontSize: 15, 
+                                color: const Color.fromARGB(255, 156, 20, 20)
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ]
+                  )
+                  :
+                  Row(
+                    children: [
+                      ElevatedButton(
+                        onPressed: () async {
+                          bool? confirmDelete = await showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text("Confirm Delete"),
+                                content: Text("Are you sure you want to delete this?"),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(false),
+                                    child: Text("Cancel"),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(true),
+                                    child: Text("Delete", style: TextStyle(color: Colors.red)),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                          if (confirmDelete == true) {
+                            // _archiveDepartment(_selectedDepartment);
+                          }
+                        },
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              CupertinoIcons.delete,
+                              color: Color.fromARGB(255, 0, 0, 0),
+                              size: 15,
+                            ),
+                            SizedBox(width: 2),
+                            Text(
+                              "Delete",
+                              style: GoogleFonts.poppins(
+                                fontSize: 15, 
+                                color: Color.fromARGB(255, 144, 0, 0),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 10,),
+                      ElevatedButton(
+                        onPressed: () => setState(() {
+                          _isEditingQuestion = true;
+                        }),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              LucideIcons.edit,
+                              color: const Color.fromARGB(255, 0, 0, 0),
+                              size: 15,
+                            ),
+                            SizedBox(width: 2),
+                            Text(
+                              "Edit",
+                              style: GoogleFonts.poppins(
+                                fontSize: 15, 
+                                color: const Color.fromARGB(255, 0, 0, 0)
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
                 ],
               ),
             ),
             SizedBox(height: 10),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 70),
+              height: 300,
+              child: _questionCard()
+            ),
+            SizedBox(height: 10,),
+            _isAddingQuestion || _isEditingQuestion ?
+            SizedBox(
+              width: 150,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () async {
+                  bool? confirmAdd = await showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: _isAddingQuestion? Text("Adding Question") :Text("Editing Question "+_questions[_selectedQuestion-1]["question_id"]+ "?"),
+                        content: Text("Are you sure you want to save this?"),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: Text("No"),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: Text("Yes", style: TextStyle(color: Colors.red)),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                  if (confirmAdd == true) {
+                    _isAddingQuestion? _addQuestion() : _editQuestion();
+                    _fetchDepartments();
+                    
+                  }
+                },
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      LucideIcons.save,
+                      color: const Color.fromARGB(255, 0, 0, 0),
+                      size: 15,
+                    ),
+                    SizedBox(width: 2),
+                    Text(
+                      "Save",
+                      style: GoogleFonts.poppins(
+                        fontSize: 15, 
+                        color: const Color.fromARGB(255, 0, 0, 0)
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            )
+            :
+            SizedBox(
+              height: 40,
+              child: SizedBox(
+                width: 70,
+                child: 
+                ElevatedButton(
+                  onPressed: () => setState(() {
+                    _isAddingQuestion = true;
+                  }),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(15))
+                    ),
+                  ),
+                  child: Center(
+                    child: Icon(LucideIcons.plus, size: 20,),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 10,),
+            Expanded(
+              child: Container(
+                width: 1000,
+                child: GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 1.5,
+                  ),
+                  itemCount: _questions.length,
+                  itemBuilder: (context, index) {
+                    return _questionListCard(index);
+                  },
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
+  Widget _questionListCard(int id) {
+    int questionNo = id + 1; 
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _selectedQuestion = questionNo;
+            _fetchQuestions();
+            print("Questions: $_questions,$_selectedQuestion");
+          });
+        },
+        child: Container(
+          padding: EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            border: Border.all(color: Color.fromARGB(91, 0, 0, 0)),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  "Question $questionNo",
+                  style: GoogleFonts.poppins(
+                    fontSize: 20, 
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                  softWrap: true,
+                ),
+                SizedBox(height: 5),
+                Container(width: 30, height: 2, color: Color.fromRGBO(111, 5, 6, 1)),
+              ],
+            ),
+          ),
+        ),
+      )
+    );
+  }
+
+
+  Widget _questionCard() {
+    int num = _questions.length + 1;
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Container(
+        padding: EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          border: Border.all(color: Color.fromARGB(91, 0, 0, 0)),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  double availableWidth = constraints.maxWidth;
+                  return Container(
+                    width: availableWidth,
+                    height: 280,
+                    padding: EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.all(Radius.circular(15)),
+                      color: Colors.white,
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: availableWidth * 0.05),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    
+                                    _isAddingQuestion? "Question $num" : "Question $_selectedQuestion",
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.justify,
+                                    softWrap: true,
+                                  ),
+                                  Container(width: 30, height: 2, color: Color.fromRGBO(111, 5, 6, 1)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: availableWidth - 20,
+                              height: 210,
+                              color: Colors.white,
+                              padding: EdgeInsets.symmetric(horizontal: 30),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  (_isAddingQuestion || _isEditingQuestion)
+                                      ? TextField(
+                                          controller: _questionController,
+                                          decoration: InputDecoration(
+                                            border: OutlineInputBorder(),
+                                            hintText: "Enter question...",
+                                          ),
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        )
+                                      : Text(
+                                          _questions[_selectedQuestion - 1]["question"],
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          softWrap: true,
+                                        ),
+                                  SizedBox(height: 30),
+                                  RatingBar(
+                                    iconSize: 40,
+                                    allowHalfRating: true,
+                                    filledIcon: Icons.star,
+                                    halfFilledIcon: Icons.star_half,
+                                    emptyIcon: Icons.star_border,
+                                    filledColor: Colors.amber,
+                                    emptyColor: Colors.grey,
+                                    currentRating: _rating,
+                                    onRatingChanged: (rating) {
+                                      setState(() {
+                                        // _rating = rating;
+                                        // print(_rating);
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
+                            )
+                          ],
+                        )
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
 }

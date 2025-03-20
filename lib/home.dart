@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
@@ -9,7 +11,8 @@ import 'dart:convert';
 import 'statistics.dart';
 import 'settings.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'test1.dart';
+import 'test.dart';
+import 'iconlist.dart';
 
 // import 'statistics.dart';
 
@@ -21,27 +24,43 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-
-
 class _MyHomePageState extends State<MyHomePage> {
+  String ip = dotenv.get('IP_ADDRESS');
+  List<Map<String, dynamic>> _departments = [];
+  final Map<String, IconData> _iconMap = IconDictionary.icons;
   String username = "User"; // Default username
-  int adminCounter = 0;
-  int technicalCounter = 0;
-  int retailInquiryCounter = 0;
-  int printingAvenueCounter = 0;
   
-  Map<String, bool> isButtonDisabled = {
-    "Admin": false,
-    "Technical": false,
-    "Retail Inquiry": false,
-    "Printing Avenue": false,
-  };
+  Map<String, bool> isButtonDisabled = {};
+
   @override
   void initState(){
     super.initState();
-    _fetchClickCounts();
-    _loadUsername();
-    
+    _fetchDepartments();
+    _loadUsername(); 
+  }
+  Future<void> _fetchDepartments() async {
+    final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=buttons&action=getdepartments');
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = jsonDecode(response.body);
+
+        setState(() {
+          _departments.clear(); 
+          _departments = List<Map<String, dynamic>>.from(data);
+        });
+        isButtonDisabled = {
+          for (var department in _departments)
+            department["button_name"] as String: false
+        };
+
+      } else {
+        print("Failed to fetch departments: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error fetching department data: $e");
+    }
   }
 
   Future<void> _sendClickData(int button_id) async {
@@ -59,25 +78,7 @@ class _MyHomePageState extends State<MyHomePage> {
       print("Error sending click data: $e");
     }
   }
-  Future<void> _fetchClickCounts() async {
-    String ip = dotenv.get('IP_ADDRESS');
-    final url = Uri.parse('http://$ip/kpi_itave/store_click.php');
-    try {
-      final response = await http.get(url);
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-
-        setState(() {
-          adminCounter = int.tryParse(data["Admin"].toString()) ?? 0;
-          technicalCounter = int.tryParse(data["Technical"].toString()) ?? 0;
-          retailInquiryCounter = int.tryParse(data["Retail Inquiry"].toString()) ?? 0;
-          printingAvenueCounter = int.tryParse(data["Printing Avenue"].toString()) ?? 0;
-        });
-      }
-    } catch (e) {
-      print("Error fetching counts: $e");
-    }
-  }
+  
   Future<void> _loadUsername() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -114,24 +115,37 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  void _incrementCounter(String buttonType, int button_id) {
-    if (isButtonDisabled[buttonType] == true) return;
-
-    setState(() {
-      isButtonDisabled[buttonType] = true;
-    });
-
-    _sendClickData(button_id).then((_) => _fetchClickCounts());
-
-    Future.delayed(Duration(seconds: 3), () {
-      setState(() {
-        isButtonDisabled[buttonType] = false;
+  void _incrementCounter(String buttonType, int button_id) async {
+    bool? confirmAdd= await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Adding to $buttonType"),
+          content: Text("$buttonType Visitor?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text("No"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text("Yes", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmAdd == true) {
+      _sendClickData(button_id);
+      Future.delayed(Duration(seconds: 0), () {
+        setState(() {
+          _fetchDepartments();
+        });
       });
-    });
+    }
   }
-
-  Widget _buildCounterCard(String title, int count, IconData icon, int button_id) {
-    
+  
+  Widget _buildCounterCard(String title, String count, String icon, int button_id) {
     double screenHeight = MediaQuery.of(context).size.height;
     double screenWidth = MediaQuery.of(context).size.width;
     double buttonFontSize = 16;
@@ -190,8 +204,7 @@ class _MyHomePageState extends State<MyHomePage> {
           borderRadius: BorderRadius.circular(15),
         ),
         child: InkWell(
-          onTap: isButtonDisabled[title]! ? null : () => _incrementCounter(title,button_id),
-          
+          onTap: isButtonDisabled[title]! ? null : () =>  _incrementCounter(title,button_id),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -238,7 +251,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
-                                    Text('$count',
+                                    Text(count,
                                       style: GoogleFonts.poppins(
                                         fontSize: counterFontSize, 
                                         color: Colors.black, 
@@ -268,7 +281,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     SizedBox(height: availableHeight * 0.1), // Responsive spacing
-                                    Icon(icon, size: availableHeight * 0.5, color: Color.fromRGBO(151, 81, 2, 1)), // Scale icon size
+                                    Icon(_iconMap[icon], size: availableHeight * 0.5, color: Color.fromRGBO(151, 81, 2, 1)), // Scale icon size
                                     SizedBox(height: availableHeight * 0.05), // Responsive spacing
                                   ],
                                 );
@@ -282,7 +295,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
               ElevatedButton(
-                onPressed: isButtonDisabled[title]! ? null : () => _incrementCounter(title, button_id),
+                onPressed: isButtonDisabled[title]! ? null : () { _incrementCounter(title, button_id); },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color.fromRGBO(53, 53, 63, 1),
                   foregroundColor: Colors.white,
@@ -353,7 +366,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   value: 1,
                   child: Row(
                     children: [
-                      Icon(Icons.analytics, color: const Color.fromARGB(255, 0, 0, 0)),
+                      Icon(LucideIcons.lineChart, color: const Color.fromARGB(255, 0, 0, 0)),
                       SizedBox(width: 8),
                       Text("Analytics", style: GoogleFonts.poppins(color: const Color.fromARGB(255, 0, 0, 0))),
                     ],
@@ -404,7 +417,7 @@ class _MyHomePageState extends State<MyHomePage> {
           width: containerWidth,
           height: containerHeight,
           // color: Colors.red,
-          padding: EdgeInsets.all(16),
+          padding: EdgeInsets.all(0),
           // decoration: BoxDecoration(
           //   color: Colors.white,
           //   borderRadius: BorderRadius.circular(20),
@@ -413,24 +426,36 @@ class _MyHomePageState extends State<MyHomePage> {
           child: Column(
             children: [
               Expanded(
-                child: Row(
+                child: _departments.length == 0 ? 
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Expanded(child: _buildCounterCard("Admin", adminCounter, LucideIcons.userCircle2, 1)),
-                    SizedBox(width: 10),
-                    Expanded(child: _buildCounterCard("Technical", technicalCounter, LucideIcons.settings, 2)),
+                    Icon(LucideIcons.alertCircle,size: 100,),
+                    SizedBox(height: 15,),
+                    Text("There is no Department Added")
                   ],
+                )
+                :
+                GridView.builder(
+                  padding: const EdgeInsets.all(10),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2, 
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 1.5,
+                  ),
+                  itemCount: _departments.length, 
+                  itemBuilder: (context, index) {
+                    return _buildCounterCard(
+                      _departments[index]["button_name"] ?? "Unknown",
+                      _departments[index]['counter_count']?.toString() ?? "0",
+                      _departments[index]["button_icon"] ?? "default_icon",
+                      _departments[index]["button_id"] ?? 0,
+                    );
+                  },
                 ),
-              ),
-              SizedBox(height: 10),
-              Expanded(
-                child: Row(
-                  children: [
-                    Expanded(child: _buildCounterCard("Retail Inquiry", retailInquiryCounter, LucideIcons.shoppingCart, 3)),
-                    SizedBox(width: 10),
-                    Expanded(child: _buildCounterCard("Printing Avenue", printingAvenueCounter, LucideIcons.printer, 4)),
-                  ],
-                ),
-              ),
+              ), 
               SizedBox(height: 20),
               Center(
                 child: Row(
@@ -450,7 +475,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ],
                 )
-              ),
+              ),     
             ],
           ),
         ),

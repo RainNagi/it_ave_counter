@@ -9,22 +9,21 @@ import 'dart:convert';
 import 'statistics.dart';
 import 'settings.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'test1.dart';
+import 'home.dart';
 import 'iconlist.dart';
 
 // import 'statistics.dart';
 
-class MyHomePage extends StatefulWidget {
-  final String title;
-  const MyHomePage({super.key, required this.title});
+class TestPage extends StatefulWidget {
+  const TestPage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<TestPage> createState() => _TestPageState();
 }
 
 
 
-class _MyHomePageState extends State<MyHomePage> {
+class _TestPageState extends State<TestPage> {
   String ip = dotenv.get('IP_ADDRESS');
   List<Map<String, dynamic>> _departments = [];
   final Map<String, IconData> _iconMap = IconDictionary.icons;
@@ -34,18 +33,14 @@ class _MyHomePageState extends State<MyHomePage> {
   int retailInquiryCounter = 0;
   int printingAvenueCounter = 0;
   
-  Map<String, bool> isButtonDisabled = {
-    "Admin": false,
-    "Technical": false,
-    "Retail Inquiry": false,
-    "Printing Avenue": false,
-  };
+  Map<String, bool> isButtonDisabled = {};
+
   @override
   void initState(){
     super.initState();
+    _fetchDepartments();
     _fetchClickCounts();
     _loadUsername(); 
-    _fetchDepartments();
   }
   Future<void> _fetchDepartments() async {
     final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=buttons&action=getdepartments');
@@ -59,6 +54,10 @@ class _MyHomePageState extends State<MyHomePage> {
           _departments.clear(); 
           _departments = List<Map<String, dynamic>>.from(data);
         });
+        isButtonDisabled = {
+          for (var department in _departments)
+            department["button_name"] as String: false
+        };
 
       } else {
         print("Failed to fetch departments: ${response.statusCode}");
@@ -75,6 +74,8 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       final response = await http.post(url, body: {'button_id': button_id.toString()});
       if (response.statusCode == 200) {
+        _fetchDepartments();
+        _fetchClickCounts();
         print("Click recorded successfully");
       } else {
         print("Failed to record click: \${response.statusCode}");
@@ -84,7 +85,6 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
   Future<void> _fetchClickCounts() async {
-    String ip = dotenv.get('IP_ADDRESS');
     final url = Uri.parse('http://$ip/kpi_itave/store_click.php');
     try {
       final response = await http.get(url);
@@ -114,6 +114,7 @@ class _MyHomePageState extends State<MyHomePage> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     Navigator.pushReplacement(
+      // ignore: use_build_context_synchronously
       context,
       MaterialPageRoute(builder: (context) => LoginPage()),
     );
@@ -134,13 +135,12 @@ class _MyHomePageState extends State<MyHomePage> {
   void _goToTest(){
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => TestPage())
+      MaterialPageRoute(builder: (context) => MyHomePage(title: 'Home Page')),
     );
   }
 
   void _incrementCounter(String buttonType, int button_id) {
     if (isButtonDisabled[buttonType] == true) return;
-
     setState(() {
       isButtonDisabled[buttonType] = true;
     });
@@ -154,8 +154,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Widget _buildCounterCard(String title, int count, String icon, int button_id) {
-    
+  Widget _buildCounterCard(String title, String count, String icon, int button_id) {
     double screenHeight = MediaQuery.of(context).size.height;
     double screenWidth = MediaQuery.of(context).size.width;
     double buttonFontSize = 16;
@@ -214,8 +213,7 @@ class _MyHomePageState extends State<MyHomePage> {
           borderRadius: BorderRadius.circular(15),
         ),
         child: InkWell(
-          onTap: isButtonDisabled[title]! ? null : () => _incrementCounter(title,button_id),
-          
+          onTap: isButtonDisabled[title]! ? null : () =>  _incrementCounter(title,button_id),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -262,7 +260,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
-                                    Text('$count',
+                                    Text(count,
                                       style: GoogleFonts.poppins(
                                         fontSize: counterFontSize, 
                                         color: Colors.black, 
@@ -306,7 +304,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
               ElevatedButton(
-                onPressed: isButtonDisabled[title]! ? null : () => _incrementCounter(title, button_id),
+                onPressed: () => isButtonDisabled[title]! ? null : () => _incrementCounter(title, button_id),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color.fromRGBO(53, 53, 63, 1),
                   foregroundColor: Colors.white,
@@ -353,7 +351,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
             ),
-            Text(widget.title, style: GoogleFonts.poppins(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+            Text("Test Home", style: GoogleFonts.poppins(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
             PopupMenuButton<int>(
               icon: Icon(Icons.account_circle, color: Colors.white, size: 30),
               onSelected: (value) {
@@ -448,10 +446,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   itemCount: _departments.length, 
                   itemBuilder: (context, index) {
                     return _buildCounterCard(
-                      _departments[index]["button_name"] as String,
-                      _departments[index]["counter_count"] == null? 0 : _departments[index]["counter_count"]  as int,
-                      _departments[index]["button_icon"] as String,
-                      _departments[index]["button_id"] as int,
+                      _departments[index]["button_name"] ?? "Unknown",
+                      _departments[index]['counter_count']?.toString() ?? "0",
+                      _departments[index]["button_icon"] ?? "default_icon",
+                      _departments[index]["button_id"] ?? 0,
                     );
                   },
                 ),
