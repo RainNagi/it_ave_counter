@@ -49,7 +49,7 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
     _fetchQuestions();
     _fetchDepartments();
-    print(_questions);
+
   }
 
   // button CRUD
@@ -114,6 +114,7 @@ class _SettingsPageState extends State<SettingsPage> {
         },
       );
       final responseData = jsonDecode(response.body);
+      _fetchDepartments();
       _showDialog(
         responseData['status'] == 'error' ? "Error" : "Success",
         responseData['message'],
@@ -168,7 +169,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
   // question CRUD
   Future<void> _fetchQuestions() async {
-    print("calling this function");
     final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=questions&action=getQuestions');
     try {
       final response = await http.get(url);
@@ -223,40 +223,60 @@ class _SettingsPageState extends State<SettingsPage> {
       _showDialog("Error", "Failed to add department: $e");
     }
   }
-  void _editQuestion() async{
-    // if (_questionController.text.trim().isEmpty) {
-    //   _showDialog("Error", "Name cannot be empty.");
-    //   return;
-    // }
-    // int quesId = _questions[_selectedQuestion-1]["button_id"];
-    // // String defaultIcon = _departments[_selectedDepartment]["button_icon"];
-    // final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=questions&action=editQuestion');
-    // try {
-    //   final response = await http.post(
-    //     url,
-    //     body: {
-    //       'question_id' : quesId.toString(),
-    //       'question' : _questionController.text
-    //     },
-    //   );
-    //   final responseData = jsonDecode(response.body);
-    //   _showDialog(
-    //     responseData['status'] == 'error' ? "Error" : "Success",
-    //     responseData['message'],
-    //   );
-    //   if (responseData['status'] == 'success') {
-    //     setState(() {
-    //       _isEditingQuestion = false;
-    //       _questionController.clear();
-    //       _fetchQuestions();
-    //     });
-    //   }
-    // } catch (e) {
-    //   _showDialog("Error", "Failed to edit department: $e");
-    // }
+  Future<void> _archiveQuestion() async {
+    if (_selectedQuestion-1 < 0 || _selectedQuestion-1 >= _questions.length) {
+      print("Invalid Question index.");
+      return;
+    }
+    print(_questions[_selectedQuestion-1]["question_id"]);
+    int questionId = _questions[_selectedQuestion-1]["question_id"];
+    final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=questions&action=archiveQuestion');
+    try {
+      final response = await http.post(url, body: {'questionId': questionId.toString()});
+      // print("Calling this function"+ questionId.toString());
+      if (response.statusCode == 200) {
+        await _fetchQuestions();
+        setState(() {});
+      } else {
+        print("Failed to archive Question: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error archiving question data: $e");
+    }
   }
-
-
+  void _editQuestion() async{
+    if (_questionController.text.trim().isEmpty) {
+      _showDialog("Error", "Question cannot be empty.");
+      return;
+    }
+    print(_questions[_selectedQuestion-1]["question_id"]);
+    int quesId = _questions[_selectedQuestion-1]["question_id"];
+    // String defaultIcon = _departments[_selectedDepartment]["button_icon"];
+    final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=questions&action=editQuestion');
+    try {
+      final response = await http.post(
+        url,
+        body: {
+          'question_id' : quesId.toString(),
+          'question' : _questionController.text
+        },
+      );
+      final responseData = jsonDecode(response.body);
+      _showDialog(
+        responseData['status'] == 'error' ? "Error" : "Success",
+        responseData['message'],
+      );
+      if (responseData['status'] == 'success') {
+        setState(() {
+          _isEditingQuestion = false;
+          _questionController.clear();
+          _fetchQuestions();
+        });
+      }
+    } catch (e) {
+      _showDialog("Error", "Failed to edit department: $e");
+    }
+  }
   void _showDialog(String title, String message) {
     showDialog(
       context: context,
@@ -385,7 +405,6 @@ class _SettingsPageState extends State<SettingsPage> {
                       color: const Color.fromARGB(255, 0, 0, 0)
                     ),
                   ),
-                  _departments.isEmpty ? Text("") :
                   _isAddingDepartment || _isEditingDepartment ?
                   Row(
                     children: [
@@ -418,7 +437,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ]
                   )
-                  :
+                  : _departments.isEmpty ? Text("") :
                   Row(
                     children: [
                       ElevatedButton(
@@ -569,7 +588,6 @@ class _SettingsPageState extends State<SettingsPage> {
                               context: context,
                               builder: (BuildContext context) {
                                 return AlertDialog(
-                                  // ignore: prefer_interpolation_to_compose_strings
                                   title: _isAddingDepartment? Text("Adding Department") :Text("Editing "+_departments[_selectedDepartment]["button_name"]+ " Department"),
                                   content: Text("Are you sure you want to save this?"),
                                   actions: [
@@ -842,7 +860,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       itemCount: filteredIcons.length,
                       itemBuilder: (context, index) {
                         String iconName = filteredIcons[index];
-                        return GestureDetector(
+                        return  GestureDetector(
                           onTap: () {
                             setState(() {
                               _selectedIcon = iconName;
@@ -888,7 +906,6 @@ class _SettingsPageState extends State<SettingsPage> {
                     'Survey Questionaires',
                     style: GoogleFonts.poppins(fontSize: 20, color: const Color.fromARGB(255, 0, 0, 0)),
                   ),
-                  _departments.isEmpty ? Text("") :
                   _isAddingQuestion || _isEditingQuestion ?
                   Row(
                     children: [
@@ -918,7 +935,8 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ]
                   )
-                  :
+                  : 
+                  _questions.isEmpty ? Text("") :
                   Row(
                     children: [
                       ElevatedButton(
@@ -943,7 +961,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             },
                           );
                           if (confirmDelete == true) {
-                            // _archiveDepartment(_selectedDepartment);
+                            _archiveQuestion();
                           }
                         },
                         child: Row(
@@ -1011,7 +1029,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     context: context,
                     builder: (BuildContext context) {
                       return AlertDialog(
-                        title: _isAddingQuestion? Text("Adding Question") :Text("Editing Question "+_questions[_selectedQuestion-1]["question_id"]+ "?"),
+                        title: _isAddingQuestion? Text("Adding Question") :Text("Editing Question "+_selectedQuestion.toString()+ "?"),
                         content: Text("Are you sure you want to save this?"),
                         actions: [
                           TextButton(
@@ -1078,7 +1096,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             SizedBox(height: 10,),
             Expanded(
-              child: Container(
+              child: SizedBox(
                 width: 1000,
                 child: GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -1105,6 +1123,7 @@ class _SettingsPageState extends State<SettingsPage> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: InkWell(
         onTap: () {
+          _isEditingQuestion || _isAddingQuestion ? print("None") :
           setState(() {
             _selectedQuestion = questionNo;
             _fetchQuestions();
@@ -1144,7 +1163,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _questionCard() {
     int num = _questions.length + 1;
-    return Card(
+    return 
+    Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Container(
         padding: EdgeInsets.all(5),
@@ -1180,7 +1200,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    
+                                    _questions.isEmpty ? "Questions 0" :
                                     _isAddingQuestion? "Question $num" : "Question $_selectedQuestion",
                                     style: GoogleFonts.poppins(
                                       fontSize: 20,
@@ -1220,9 +1240,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                             fontWeight: FontWeight.bold,
                                           ),
                                           textAlign: TextAlign.center,
+                                          keyboardType: TextInputType.multiline,
+                                          maxLines: null,
                                         )
                                       : Text(
-                                          _questions[_selectedQuestion - 1]["question"],
+                                          _questions.isEmpty ? "There is no Question" : _questions[_selectedQuestion - 1]["question"],
                                           style: GoogleFonts.poppins(
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold,
@@ -1231,6 +1253,8 @@ class _SettingsPageState extends State<SettingsPage> {
                                           softWrap: true,
                                         ),
                                   SizedBox(height: 30),
+                                  _questions.isEmpty ? 
+                                  SizedBox(height: 30) :
                                   RatingBar(
                                     iconSize: 40,
                                     allowHalfRating: true,

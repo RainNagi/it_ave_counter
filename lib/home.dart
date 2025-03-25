@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:kpi_test/feedback.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -13,6 +14,7 @@ import 'settings.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'test.dart';
 import 'iconlist.dart';
+import 'feedback.dart';
 
 // import 'statistics.dart';
 
@@ -100,6 +102,12 @@ class _MyHomePageState extends State<MyHomePage> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => StatisticsPage())
+    );
+  }
+  void _goToCustomerFeedBack() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => CustomerFeedback())
     );
   }
   void _goToSettings(){
@@ -463,7 +471,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   children: [
                     ElevatedButton(
                       onPressed: () {
-                        // _goToCustomerFeedBack();
+                        _goToCustomerFeedBack();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
