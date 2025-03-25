@@ -12,16 +12,16 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-$buttonType = $_POST['buttonType'] ?? '';
+$button_id = $_POST['button_id'] ?? '';
 
-if (!empty($buttonType)) {
-    $stmt = $conn->prepare("INSERT INTO counter (button_name) VALUES (?)");
+if (!empty($button_id)) {
+    $stmt = $conn->prepare("INSERT INTO counter (button_id) VALUES (?)");
     
     if ($stmt === false) {
         die("Error preparing the statement: " . $conn->error);
     }
 
-    $stmt->bind_param("s", $buttonType);
+    $stmt->bind_param("s", $button_id);
 
     if ($stmt->execute()) {
         echo "Button click recorded successfully.";
@@ -32,10 +32,7 @@ if (!empty($buttonType)) {
     $stmt->close();
 }
 
-$query = "SELECT button_name, COUNT(*) as count 
-          FROM counter 
-          WHERE DATE(timestamp) = CURDATE()
-          GROUP BY button_name";
+$query = "SELECT b.button_name, COUNT(c.button_id) AS count FROM buttons AS b LEFT JOIN counter AS c ON b.button_id = c.button_id WHERE DATE(timestamp) = CURDATE() GROUP BY b.button_name;";
 
 $result = $conn->query($query);
 
