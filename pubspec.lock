@@ -65,6 +65,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.1"
+  data_table_2:
+    dependency: "direct main"
+    description:
+      name: data_table_2
+      sha256: b8dd157e4efe5f2beef092c9952a254b2192cf76a26ad1c6aa8b06c8b9d665da
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.6.0"
   equatable:
     dependency: transitive
     description:
@@ -118,6 +126,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.1"
+  flutter_datepicker_textfield:
+    dependency: "direct main"
+    description:
+      name: flutter_datepicker_textfield
+      sha256: "211b4109574de1d9adcb7bf4c3306a7fdd405a19dcf9b2f243d3c38fc4f5c3ac"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.5.1"
   flutter_dotenv:
     dependency: "direct main"
     description:
@@ -224,6 +240,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.11.1"
+  material_table_view:
+    dependency: "direct main"
+    description:
+      name: material_table_view
+      sha256: "00c6bad9f46cd9e092260828f3432a1fdcd02e0c0977ff207bf9d58cc1a5ac1a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.2.0"
   meta:
     dependency: transitive
     description:
@@ -397,6 +421,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  sliver_passthrough:
+    dependency: transitive
+    description:
+      name: sliver_passthrough
+      sha256: aa199d4b578785ce170aaf28f8dfaeae8ec159f4081cc4bf50dcd35b770d9a74
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
   source_span:
     dependency: transitive
     description:

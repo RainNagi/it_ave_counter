@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:kpi_test/feedback.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -13,6 +12,7 @@ import 'statistics.dart';
 import 'settings.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'test.dart';
+import 'test1.dart';
 import 'iconlist.dart';
 import 'feedback.dart';
 
@@ -122,6 +122,12 @@ class _MyHomePageState extends State<MyHomePage> {
       MaterialPageRoute(builder: (context) => TestPage())
     );
   }
+  void _goToTest1(){
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => StatisticsPage1())
+    );
+  }
 
   void _incrementCounter(String buttonType, int button_id) async {
     bool? confirmAdd= await showDialog(
@@ -154,59 +160,16 @@ class _MyHomePageState extends State<MyHomePage> {
   }
   
   Widget _buildCounterCard(String title, String count, String icon, int button_id) {
-    double screenHeight = MediaQuery.of(context).size.height;
     double screenWidth = MediaQuery.of(context).size.width;
     double buttonFontSize = 16;
     double titleFontSize = 18;
     double counterFontSize = 30;
     double visitorFont = 10;
-    // double iconSize = 64;
-    // double horizontalPadding = 20;
-    if (screenHeight < 850) {
-      if (screenWidth < 500) {
-        buttonFontSize = 10;
-        titleFontSize = 10;
-        counterFontSize = 12;
-        visitorFont = 5;
-        // iconSize = 64;
-        // horizontalPadding = 5;
-      } else if (screenWidth < 600) {
-        buttonFontSize = 15;
-        titleFontSize = 20;
-        counterFontSize = 30;
-        visitorFont = 12;
-        // iconSize = 70;
-        // horizontalPadding = 5;
-      }
-    } else {
-        if (screenWidth < 500) {
-        buttonFontSize = 16;
-        titleFontSize = 15;
-        counterFontSize = 19;
-        visitorFont = 5;
-        // iconSize = 64;
-        // horizontalPadding = 5;
-      } else if (screenWidth < 650) {
-        buttonFontSize = 15;
-        titleFontSize = 20;
-        counterFontSize = 30;
-        visitorFont = 12;
-        // iconSize = 100;
-        // horizontalPadding = 5;
-      } else {
-        buttonFontSize = 20;
-        titleFontSize = 20;
-        counterFontSize = 40;
-        visitorFont = 13;
-        // iconSize = 60;
-        // horizontalPadding = 20;
-      }
-    }
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Container(
-        padding: EdgeInsets.all(5),
+        padding: EdgeInsets.all(0),
         decoration: BoxDecoration(
           border: Border.all(color: Color.fromARGB(91, 0, 0, 0)),
           borderRadius: BorderRadius.circular(15),
@@ -219,7 +182,7 @@ class _MyHomePageState extends State<MyHomePage> {
             children: [
               Expanded(
                 child: Container(
-                  padding: EdgeInsets.all(10),
+                  padding: EdgeInsets.all(0),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(15),
@@ -352,7 +315,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             Text(widget.title, style: GoogleFonts.poppins(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
             PopupMenuButton<int>(
-              icon: Icon(Icons.account_circle, color: Colors.white, size: 30),
+              icon: Icon(Icons.menu, color: Colors.white, size: 30),
               onSelected: (value) {
                 if (value == 3) {
                   _logout();
@@ -362,6 +325,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   _goToStatistics();
                 } else if (value == 4) {
                   _goToTest();
+                } else if (value == 5) {
+                  _goToTest1();
                 }
               },
               itemBuilder: (context) => [
@@ -405,6 +370,17 @@ class _MyHomePageState extends State<MyHomePage> {
                 PopupMenuDivider(),
                 PopupMenuItem(
                   value: 4,
+                  child: Row(
+                    children: [
+                      Icon(LucideIcons.activity, color: const Color.fromARGB(255, 0, 0, 0)),
+                      SizedBox(width: 8),
+                      Text("Test", style: GoogleFonts.poppins(color: const Color.fromARGB(255, 0, 0, 0))),
+                    ],
+                  ),
+                ),
+                PopupMenuDivider(),
+                PopupMenuItem(
+                  value: 5,
                   child: Row(
                     children: [
                       Icon(LucideIcons.activity, color: const Color.fromARGB(255, 0, 0, 0)),

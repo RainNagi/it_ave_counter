@@ -1,3 +1,5 @@
+// ignore_for_file: unused_import
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
@@ -11,6 +13,11 @@ import 'settings.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'home.dart';
 import 'iconlist.dart';
+import 'package:flutter/services.dart';
+import 'package:material_table_view/material_table_view.dart';
+import 'package:data_table_2/data_table_2.dart';
+
+
 
 // import 'statistics.dart';
 
@@ -24,91 +31,70 @@ class TestPage extends StatefulWidget {
 
 
 class _TestPageState extends State<TestPage> {
+  final TextEditingController _controller = TextEditingController();
+  final RegExp _dateRegex = RegExp(r'^\d{4}-\d{2}-\d{2}$');
+
+
+  TextEditingController date = TextEditingController();
+  TextEditingController _dateController = TextEditingController();
+  Future<void> _selectDate(BuildContext context) async {
+    DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+
+    if (picked != null) {
+      setState(() {
+        print(picked);
+        print(picked.month);
+        print(picked.year);
+        print(picked.day);
+        _dateController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+        print(_dateController.text);
+      });
+    }
+  }
   String ip = dotenv.get('IP_ADDRESS');
-  List<Map<String, dynamic>> _departments = [];
-  final Map<String, IconData> _iconMap = IconDictionary.icons;
-  String username = "User"; // Default username
-  int adminCounter = 0;
-  int technicalCounter = 0;
-  int retailInquiryCounter = 0;
-  int printingAvenueCounter = 0;
-  
-  Map<String, bool> isButtonDisabled = {};
+
+  final TextEditingController _startingDateController = TextEditingController();
+  final TextEditingController _endingDateController = TextEditingController();
+
+  List<Map<String, dynamic>> _departmentVisitors = [];
+
+  Future<void> _getDepartmentVisitors() async {
+    final url = Uri.parse('http://$ip/kpi_itave/statistics.php?action=getDepartmentVisitors');
+    try {
+      final response = await http.post(
+        url,
+        body: {
+          'starting_date': _startingDateController.text,
+          'ending_date': _endingDateController.text,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = jsonDecode(response.body);
+        setState(() {
+          _departmentVisitors = List<Map<String, dynamic>>.from(data);
+        });
+      } else {
+        print("Failed to fetch data: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error fetching data: $e");
+    }
+  }
+
+
+
 
   @override
   void initState(){
     super.initState();
-    _fetchDepartments();
-    _fetchClickCounts();
-    _loadUsername(); 
+    _getDepartmentVisitors();
   }
-  Future<void> _fetchDepartments() async {
-    final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=buttons&action=getdepartments');
-    try {
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        List<dynamic> data = jsonDecode(response.body);
-
-        setState(() {
-          _departments.clear(); 
-          _departments = List<Map<String, dynamic>>.from(data);
-        });
-        isButtonDisabled = {
-          for (var department in _departments)
-            department["button_name"] as String: false
-        };
-
-      } else {
-        print("Failed to fetch departments: ${response.statusCode}");
-      }
-    } catch (e) {
-      print("Error fetching department data: $e");
-    }
-  }
-
-  Future<void> _sendClickData(int button_id) async {
-    String ip = dotenv.get('IP_ADDRESS');
-    
-    final url = Uri.parse('http://$ip/kpi_itave/store_click.php');
-    try {
-      final response = await http.post(url, body: {'button_id': button_id.toString()});
-      if (response.statusCode == 200) {
-        _fetchDepartments();
-        _fetchClickCounts();
-        print("Click recorded successfully");
-      } else {
-        print("Failed to record click: \${response.statusCode}");
-      }
-    } catch (e) {
-      print("Error sending click data: $e");
-    }
-  }
-  Future<void> _fetchClickCounts() async {
-    final url = Uri.parse('http://$ip/kpi_itave/store_click.php');
-    try {
-      final response = await http.get(url);
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-
-        setState(() {
-          adminCounter = int.tryParse(data["Admin"].toString()) ?? 0;
-          technicalCounter = int.tryParse(data["Technical"].toString()) ?? 0;
-          retailInquiryCounter = int.tryParse(data["Retail Inquiry"].toString()) ?? 0;
-          printingAvenueCounter = int.tryParse(data["Printing Avenue"].toString()) ?? 0;
-        });
-      }
-    } catch (e) {
-      print("Error fetching counts: $e");
-    }
-  }
-  Future<void> _loadUsername() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      username = prefs.getString("username") ?? "User";
-    });
-  }
-
 
   void _logout() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -139,201 +125,12 @@ class _TestPageState extends State<TestPage> {
     );
   }
 
-  void _incrementCounter(String buttonType, int button_id) {
-    if (isButtonDisabled[buttonType] == true) return;
-    setState(() {
-      isButtonDisabled[buttonType] = true;
-    });
 
-    _sendClickData(button_id).then((_) => _fetchClickCounts());
 
-    Future.delayed(Duration(seconds: 3), () {
-      setState(() {
-        isButtonDisabled[buttonType] = false;
-      });
-    });
-  }
-
-  Widget _buildCounterCard(String title, String count, String icon, int button_id) {
-    double screenHeight = MediaQuery.of(context).size.height;
-    double screenWidth = MediaQuery.of(context).size.width;
-    double buttonFontSize = 16;
-    double titleFontSize = 18;
-    double counterFontSize = 30;
-    double visitorFont = 10;
-    // double iconSize = 64;
-    // double horizontalPadding = 20;
-    if (screenHeight < 850) {
-      if (screenWidth < 500) {
-        buttonFontSize = 10;
-        titleFontSize = 10;
-        counterFontSize = 12;
-        visitorFont = 5;
-        // iconSize = 64;
-        // horizontalPadding = 5;
-      } else if (screenWidth < 600) {
-        buttonFontSize = 15;
-        titleFontSize = 20;
-        counterFontSize = 30;
-        visitorFont = 12;
-        // iconSize = 70;
-        // horizontalPadding = 5;
-      }
-    } else {
-        if (screenWidth < 500) {
-        buttonFontSize = 16;
-        titleFontSize = 15;
-        counterFontSize = 19;
-        visitorFont = 5;
-        // iconSize = 64;
-        // horizontalPadding = 5;
-      } else if (screenWidth < 650) {
-        buttonFontSize = 15;
-        titleFontSize = 20;
-        counterFontSize = 30;
-        visitorFont = 12;
-        // iconSize = 100;
-        // horizontalPadding = 5;
-      } else {
-        buttonFontSize = 20;
-        titleFontSize = 20;
-        counterFontSize = 40;
-        visitorFont = 13;
-        // iconSize = 60;
-        // horizontalPadding = 20;
-      }
-    }
-
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Container(
-        padding: EdgeInsets.all(5),
-        decoration: BoxDecoration(
-          border: Border.all(color: Color.fromARGB(91, 0, 0, 0)),
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: InkWell(
-          onTap: isButtonDisabled[title]! ? null : () =>  _incrementCounter(title,button_id),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Container(
-                  padding: EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(15),
-                      topRight: Radius.circular(15),
-                    ),
-                    color: Colors.white,
-                  ),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      double screenWidth = constraints.maxWidth;
-                      return Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(title,
-                                        style: GoogleFonts.poppins(
-                                          fontSize: titleFontSize, 
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        textAlign: TextAlign.justify,
-                                        softWrap: true,
-                                      ),
-                                      Container(width: 30, height: 2, color: Color.fromRGBO(111, 5, 6, 1)),
-                                    ],
-                                  ),
-                                ),
-                                SizedBox(width: screenWidth * 0.05),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(count,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: counterFontSize, 
-                                        color: Colors.black, 
-                                        fontWeight: FontWeight.bold
-                                      ),
-                                      textAlign: TextAlign.center
-                                    ),
-                                    Text('Visitors',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: visitorFont,
-                                        color: Colors.grey[700]
-                                      ), 
-                                      textAlign: TextAlign.center
-                                    ),
-                                  ],
-                                )
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                double availableHeight = constraints.maxHeight; // Get dynamic height
-
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    SizedBox(height: availableHeight * 0.1), // Responsive spacing
-                                    Icon(_iconMap[icon], size: availableHeight * 0.5, color: Color.fromRGBO(151, 81, 2, 1)), // Scale icon size
-                                    SizedBox(height: availableHeight * 0.05), // Responsive spacing
-                                  ],
-                                );
-                              },
-                            ),
-                          )
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () => isButtonDisabled[title]! ? null : () => _incrementCounter(title, button_id),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color.fromRGBO(53, 53, 63, 1),
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(15),
-                      bottomRight: Radius.circular(15),
-                    ),
-                  ),
-                ),
-                child: Center(
-                  child: Text("$title Visitor", style: GoogleFonts.poppins(fontSize: buttonFontSize), textAlign: TextAlign.center),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-  }
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double containerWidth = screenWidth * (screenWidth < 700?  1 : 0.8);
-    double containerHeight = MediaQuery.of(context).size.height * 0.9;
-
+    
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color.fromRGBO(111, 5, 6, 1),
@@ -368,7 +165,7 @@ class _TestPageState extends State<TestPage> {
               itemBuilder: (context) => [
                 PopupMenuItem(
                   value: 0,
-                  child: Text(username, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+                  child: Text("Why", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
                 ),
                 PopupMenuDivider(),
                 PopupMenuItem(
@@ -421,63 +218,80 @@ class _TestPageState extends State<TestPage> {
         ),
         centerTitle: false,
       ),
-      body: Center(
-        child: Container(
-          width: containerWidth,
-          height: containerHeight,
-          // color: Colors.red,
-          padding: EdgeInsets.all(0),
-          // decoration: BoxDecoration(
-          //   color: Colors.white,
-          //   borderRadius: BorderRadius.circular(20),
-          //   boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, spreadRadius: 2)],
-          // ),
-          child: Column(
-            children: [
-              Expanded(
-                child: GridView.builder(
-                  padding: const EdgeInsets.all(10),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2, 
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: 1.5,
-                  ),
-                  itemCount: _departments.length, 
-                  itemBuilder: (context, index) {
-                    return _buildCounterCard(
-                      _departments[index]["button_name"] ?? "Unknown",
-                      _departments[index]['counter_count']?.toString() ?? "0",
-                      _departments[index]["button_icon"] ?? "default_icon",
-                      _departments[index]["button_id"] ?? 0,
-                    );
-                  },
-                ),
-              ), 
-              SizedBox(height: 20),
-              Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        // _goToCustomerFeedBack();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      child: Text("Feedback", style: GoogleFonts.poppins(fontSize: 18)),
-                    ),
+      body: Padding(
+        padding: EdgeInsets.all(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _startingDateController,
+              decoration: InputDecoration(
+                labelText: "Starting Date",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 10),
+            TextField(
+              controller: _endingDateController,
+              decoration: InputDecoration(
+                labelText: "Ending Date",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _getDepartmentVisitors,
+              child: Text("Search"),
+            ),
+            SizedBox(height: 20),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  columns: [
+                    DataColumn(label: Text("Button ID")),
+                    DataColumn(label: Text("Button Name")),
+                    DataColumn(label: Text("Counter Count")),
+                    DataColumn(label: Text("Average Feedback")),
                   ],
-                )
-              ),     
-            ],
-          ),
+                  rows: _departmentVisitors.map((data) {
+                    return DataRow(cells: [
+                      DataCell(Text(data['button_id'].toString())),
+                      DataCell(Text(data['button_name'].toString())),
+                      DataCell(Text(data['counter_count'].toString())),
+                      DataCell(Text(data['average_feedback']?.toString() ?? 'N/A')),
+                    ]);
+                  }).toList(),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+}
+class DateInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    String digitsOnly = newValue.text.replaceAll(RegExp(r'\D'), ''); 
+
+    String formatted = "";
+    if (digitsOnly.length > 4) {
+      formatted += digitsOnly.substring(0, 4) + "-";
+      if (digitsOnly.length > 6) {
+        formatted += digitsOnly.substring(4, 6) + "-";
+        formatted += digitsOnly.substring(6, digitsOnly.length.clamp(6, 8));
+      } else {
+        formatted += digitsOnly.substring(4, digitsOnly.length);
+      }
+    } else {
+      formatted = digitsOnly;
+    }
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }
