@@ -4,7 +4,6 @@ import 'package:responsive_framework/responsive_framework.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'login.dart';
 import 'home.dart';
-import 'statistics.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,7 +32,7 @@ class MyApp extends StatelessWidget {
           Breakpoint(start: 1921, end: double.infinity, name: "4K"),
         ],
       ),
-      home: isLoggedIn ? StatisticsPage() : LoginPage(),
+      home: isLoggedIn ? MyHomePage(title: 'Home Page') : LoginPage(),
     );
   }
 }

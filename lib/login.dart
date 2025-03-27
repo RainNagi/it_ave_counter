@@ -30,31 +30,25 @@ class _LoginPageState extends State<LoginPage> {
 
   
   Future<void> login() async {
-    if (emailController.text == "rain" && passwordController.text == "rain") {
-      setState(() {
-        errorMessage = "";
-      });
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MyHomePage(title: 'Home Page')),
-      );
-    } 
-
     var url = Uri.parse("http://$ip/kpi_itave/auth-handler.php");
     var response = await http.post(url, body: {
       "action": "login",
       "email": emailController.text,
       "password": passwordController.text,
     });
-    print(url);
 
+    print(url);
     var data = jsonDecode(response.body);
+    
     if (data["status"] == "success") {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isLoggedIn', true);
+      await prefs.setString('uname', data["uname"]);
+
       setState(() {
         errorMessage = "";
       });
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => MyHomePage(title: 'Home Page')),
@@ -65,6 +59,7 @@ class _LoginPageState extends State<LoginPage> {
       });
     }
   }
+
 
   
   @override

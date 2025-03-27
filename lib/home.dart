@@ -11,8 +11,6 @@ import 'dart:convert';
 import 'statistics.dart';
 import 'settings.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'test.dart';
-import 'test1.dart';
 import 'iconlist.dart';
 import 'feedback.dart';
 
@@ -84,7 +82,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _loadUsername() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      username = prefs.getString("username") ?? "User";
+      username = prefs.getString("uname") ?? "User";
     });
   }
 
@@ -116,18 +114,7 @@ class _MyHomePageState extends State<MyHomePage> {
       MaterialPageRoute(builder: (context) => SettingsPage())
     );
   }
-  void _goToTest(){
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => TestPage())
-    );
-  }
-  void _goToTest1(){
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => StatisticsPage1())
-    );
-  }
+  
 
   void _incrementCounter(String buttonType, int button_id) async {
     bool? confirmAdd= await showDialog(
@@ -323,10 +310,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   _goToSettings();
                 } else if (value == 1) {
                   _goToStatistics();
-                } else if (value == 4) {
-                  _goToTest();
-                } else if (value == 5) {
-                  _goToTest1();
                 }
               },
               itemBuilder: (context) => [
@@ -364,28 +347,6 @@ class _MyHomePageState extends State<MyHomePage> {
                       Icon(Icons.logout, color: Colors.red),
                       SizedBox(width: 8),
                       Text("Logout", style: GoogleFonts.poppins(color: Colors.red)),
-                    ],
-                  ),
-                ),
-                PopupMenuDivider(),
-                PopupMenuItem(
-                  value: 4,
-                  child: Row(
-                    children: [
-                      Icon(LucideIcons.activity, color: const Color.fromARGB(255, 0, 0, 0)),
-                      SizedBox(width: 8),
-                      Text("Test", style: GoogleFonts.poppins(color: const Color.fromARGB(255, 0, 0, 0))),
-                    ],
-                  ),
-                ),
-                PopupMenuDivider(),
-                PopupMenuItem(
-                  value: 5,
-                  child: Row(
-                    children: [
-                      Icon(LucideIcons.activity, color: const Color.fromARGB(255, 0, 0, 0)),
-                      SizedBox(width: 8),
-                      Text("Test", style: GoogleFonts.poppins(color: const Color.fromARGB(255, 0, 0, 0))),
                     ],
                   ),
                 ),
