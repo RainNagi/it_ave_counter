@@ -5,6 +5,8 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cupertino_sidebar/cupertino_sidebar.dart';
+import 'package:flutter/cupertino.dart';
 import 'dart:convert';
 import 'home.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -30,6 +32,9 @@ class _StatisticsPageState extends State<StatisticsPage> {
     _fetchDepartments();
     fetchStatistics();
   }
+
+  late List<Widget> _pages;
+  int _selectedIndex = 0;
   
   final TextEditingController _startingDateController = TextEditingController();
   final TextEditingController _endingDateController = TextEditingController();
@@ -97,19 +102,12 @@ class _StatisticsPageState extends State<StatisticsPage> {
   Future<void> fetchStatistics() async {
     final url = Uri.parse('http://$ip/kpi_itave/statistics1.php');
     try {
-      print("Fetching statistics from: $url");
-      print("Starting Date: ${_startingDateController.text}");
-      print("Ending Date: ${_endingDateController.text}");
-
       final response = await http.post(url,
         body: {
           'starting_date': _startingDateController.text,
           'ending_date': _endingDateController.text,
         }
       );
-
-      print("Response Status Code: ${response.statusCode}");
-      print("Response Body: ${response.body}");
 
       if (response.statusCode == 200) {
         try {
@@ -118,7 +116,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
             statistics = {for (var item in data) item["button_id"].toString(): item["occurrences"]};
 
           });
-          print("Statistics: $statistics");
         } catch (e) {
           print("Error decoding JSON: $e");
         }
@@ -265,6 +262,13 @@ class _StatisticsPageState extends State<StatisticsPage> {
 
   @override
   Widget build(BuildContext context) {
+    List<Widget> getPages() {
+      return [
+         _reportTable(),
+         _visualReport()
+      ];
+    }
+    _pages = getPages();
     double screenWidth = MediaQuery.of(context).size.width;
     double containerWidth = screenWidth * 0.9;
     return Scaffold(
@@ -298,56 +302,68 @@ class _StatisticsPageState extends State<StatisticsPage> {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal:  16.0),
-                    width: 300,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    width: 580,
+                    child: Text(
+                      "Select Date: ",
+                      style: GoogleFonts.poppins(
+                        fontSize: 16, color: Colors.black54,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.start,
+                    ),
+                  ),
+                  
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal:  16.0),
+                    width: 1000,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Text(
-                          "Select Date: ",
-                          style: GoogleFonts.poppins(
-                            fontSize: 16, color: Colors.black54,
-                            fontWeight: FontWeight.bold
-                          ),
-                        ),
-                        SizedBox(height: 5,),
-                        TextField(
-                          controller: _startingDateController,
-                          decoration: InputDecoration(
-                            labelText: "Starting Date",
-                            hintText: "YYYY-MM-DD",
-                            border: OutlineInputBorder(),
-                            suffixIcon: IconButton(
-                              onPressed: () => _selectDate(context, _startingDateController), 
-                              icon: Icon(Icons.calendar_month)
+                        Container(
+                          width: 250,
+                          child: TextField(
+                            controller: _startingDateController,
+                            decoration: InputDecoration(
+                              labelText: "Starting Date",
+                              hintText: "YYYY-MM-DD",
+                              border: OutlineInputBorder(),
+                              suffixIcon: IconButton(
+                                onPressed: () => _selectDate(context, _startingDateController), 
+                                icon: Icon(Icons.calendar_month)
+                              ),
                             ),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              LengthLimitingTextInputFormatter(10), 
+                              FilteringTextInputFormatter.digitsOnly, 
+                              DateInputFormatter(), 
+                            ],
                           ),
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            LengthLimitingTextInputFormatter(10), 
-                            FilteringTextInputFormatter.digitsOnly, 
-                            DateInputFormatter(), 
-                          ],
                         ),
-                        SizedBox(height: 10,),
-                        TextField(
-                          controller: _endingDateController,
-                          decoration: InputDecoration(
-                            labelText: "Ending Date",
-                            hintText: "YYYY-MM-DD",
-                            border: OutlineInputBorder(),
-                            suffixIcon: IconButton(
-                              onPressed: () => _selectDate(context, _endingDateController), 
-                              icon: Icon(Icons.calendar_month)
+                        SizedBox(width: 10,),
+                        Container(
+                          width: 250,
+                          child: TextField(
+                            controller: _endingDateController,
+                            decoration: InputDecoration(
+                              labelText: "Ending Date",
+                              hintText: "YYYY-MM-DD",
+                              border: OutlineInputBorder(),
+                              suffixIcon: IconButton(
+                                onPressed: () => _selectDate(context, _endingDateController), 
+                                icon: Icon(Icons.calendar_month)
+                              ),
                             ),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              LengthLimitingTextInputFormatter(10), 
+                              FilteringTextInputFormatter.digitsOnly, 
+                              DateInputFormatter(), 
+                            ],
                           ),
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            LengthLimitingTextInputFormatter(10), 
-                            FilteringTextInputFormatter.digitsOnly, 
-                            DateInputFormatter(), 
-                          ],
                         ),
-                        SizedBox(height: 10,),
+                        SizedBox(width: 10,),
                         InkWell(
                           onTap: (){
                             _getDepartmentVisitors();
@@ -355,6 +371,8 @@ class _StatisticsPageState extends State<StatisticsPage> {
                             fetchWeekdayStatistics();
                           }, 
                           child: Container(
+                            height: 40,
+                            width: 40,
                             decoration: BoxDecoration(
                               border: Border.all(color: Colors.black),
                               borderRadius: BorderRadius.all(Radius.circular(8))
@@ -362,8 +380,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text("Search"),
-                                SizedBox(width: 5,),
                                 Icon(Icons.search)
                               ]
                             )
@@ -372,219 +388,269 @@ class _StatisticsPageState extends State<StatisticsPage> {
                       ],
                     )
                   ),
+                  SizedBox(height: 20,),
+                  Stack(
+                    children: [
+                      Align(
+                        alignment: Alignment.topCenter,
+                        child: SafeArea(
+                          child: DefaultTabController(
+                            length: 2,
+                            child: Builder(
+                              builder: (context) {
+                                return CupertinoFloatingTabBar(
+                                  isVibrant: true,
+                                  onDestinationSelected: (value) {
+                                      setState(() {
+                                        _selectedIndex = value;
+                                      });
+                                  },
+                                  tabs: const [
+                                      CupertinoFloatingTab(child: Text('Reports')),
+                                      CupertinoFloatingTab(child: Text('Visual Reports')),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
                   SizedBox(height: 30,),
                   Center(
-                    child: SizedBox(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: DataTable(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.black),
-                            borderRadius: BorderRadius.all(Radius.circular(8)),
-                            color: Colors.white
-                          ),
-                          columns: [
-                            DataColumn(label: Text("Department ID")),
-                            DataColumn(label: Text("Department")),
-                            DataColumn(label: Text("Visitor Count")),
-                            DataColumn(label: Text("Average Feedback")),
-                          ],
-                          rows: _departmentVisitors.map((data) {
-                            return DataRow(cells: [
-                              DataCell(Text(data['button_id'].toString())),
-                              DataCell(Text(data['button_name'].toString())),
-                              DataCell(Text(data['counter_count'].toString())),
-                              DataCell(Text(data['average_feedback']?.toString() ?? 'N/A')),
-                            ]);
-                          }).toList(),
-                        ),
-                      ),
-                    ),
+                    child: _pages.elementAt(_selectedIndex), 
                   ),
                 ]
               ),
             ),
-            Container(
-              width: containerWidth,
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, spreadRadius: 2)],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Dropdowns Row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Text("Montly Statistics", style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold)),
-                      SizedBox(width: 15),
-                      // Flexible(
-                      //   child: years.isEmpty ?
-                      //   Text("Empty") :
-                      //   DropdownButton<String>(
-                      //     value: selectedYear,
-                      //     onChanged: (String? newValue) {
-                      //       if (newValue != null) {
-                      //         setState(() {
-                      //           selectedYear = newValue;
-                      //           fetchMonths(selectedYear);
-                      //         });
-                      //       }
-                      //     },
-                      //     items: years.map((String year) {
-                      //       return DropdownMenuItem(value: year, child: Text(year));
-                      //     }).toList(),
-                      //   ),
-                      // ),
-                      // Flexible(
-                      //   child: months.isEmpty ?
-                      //   Text("Empty") :
-                      //   DropdownButton<String>(
-                      //     value: selectedMonthValue,
-                      //     onChanged: (String? newValue) {
-                      //       if (newValue != null) {
-                      //         setState(() {
-                      //           selectedMonthValue = newValue;
-                      //           selectedMonthName = months.firstWhere((month) => month["value"] == newValue)["name"]!;
-                      //           fetchStatistics();
-                      //         });
-                      //       }
-                      //     },
-                      //     items: months.map((month) {
-                      //       return DropdownMenuItem(value: month["value"], child: Text(month["name"]!));
-                      //     }).toList(),
-                      //   ),
-                      // ),
-                    ],
-                  ),
-                  SizedBox(height: 15),
-                  
-                  // First Chart
-                  SizedBox(
-                    height: 300,
-                    child: statistics.isEmpty
-                        ? Center(child: Text("No data available"))
-                        : BarChart(
-                          BarChartData(
-                            gridData: FlGridData(
-                              drawHorizontalLine: true,
-                              drawVerticalLine: false  
-                            ),
-                            maxY: (statistics.values.isNotEmpty
-                                    ? ((statistics.values.reduce((a, b) => a > b ? a : b) + 5) / 5).ceil() * 5
-                                    : 10)
-                                .toDouble(),
-                            barGroups: getBarChartData(),
-                            titlesData: FlTitlesData(
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  getTitlesWidget: (double value, TitleMeta meta) {
-                                    return Padding(
-                                      padding: EdgeInsets.only(top: 8), 
-                                      child: Transform.rotate(
-                                        angle: -0.3,
-                                        child: Text(
-                                          departments[value.toInt()]["button_name"], 
-                                          style: GoogleFonts.poppins(fontSize: 12),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                              // leftTitles: AxisTitles(
-                              //   sideTitles: SideTitles(
-                              //     showTitles: true,
-                              //     getTitlesWidget: (double value, TitleMeta meta) {
-                              //       return value % 5 == 0
-                              //           ? Text(value.toInt().toString(), style: GoogleFonts.poppins(fontSize: 12))
-                              //           : Container();
-                              //     },
-                              //   ),
-                              // ),
-                            ),
-                          ),
-                        ),
-
-                  ),
-
-                  SizedBox(height: 15),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Text("Weekday Statistics", style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold)),
-                      SizedBox(width: 10),
-                      Flexible(
-                        child:
-                        departments.isEmpty ?
-                        Text("Empty") :
-                        DropdownButton<String>(
-                          value: departments[selectedDepartment]["button_name"],
-                          onChanged: (String? newValue) {
-                            if (newValue != null) {
-                              setState(() {
-                                selectedDepartment = departments.indexWhere((dept) => dept["button_name"] == newValue);
-                                fetchWeekdayStatistics();
-                              });
-                            }
-                          },
-                          items: departments.map((dept) {
-                            return DropdownMenuItem(
-                              value: dept["button_name"].toString(),
-                              child: Text(dept["button_name"].toString()),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(
-                    height: 300,
-                    child: weekdayStatistics.isEmpty
-                        ? Center(child: Text("No data available"))
-                        : BarChart(
-                            BarChartData(
-                              gridData: FlGridData(
-                                drawHorizontalLine: true,
-                                drawVerticalLine: false  
-                              ),
-                              maxY: (weekdayStatistics.values.isNotEmpty
-                                      ? ((weekdayStatistics.values.reduce((a, b) => a > b ? a : b) + 5) / 5).ceil() * 5
-                                      : 10)
-                                  .toDouble(),
-                              barGroups: getWeekdayBarChartData(),
-                              titlesData: FlTitlesData(
-                                bottomTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    getTitlesWidget: (double value, TitleMeta meta) {
-                                      return Transform.rotate(
-                                        angle: -0.4,
-                                        child: Text(weekdaysOrder[value.toInt()], style: GoogleFonts.poppins(fontSize: 12)),
-                                      );
-                                    },
-                                  ),
-                                ),
-                                
-                              ),
-                            ),
-                          ),
-                  ),
-                ],
-              ),
-            ),
-
+            
           ],
         ),
       ),
     );
   }
+  Widget _reportTable() {
+    return SizedBox(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.vertical,
+        child: DataTable(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.black),
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+            color: Colors.white
+          ),
+          columns: [
+            DataColumn(label: Text("Department ID")),
+            DataColumn(label: Text("Department")),
+            DataColumn(label: Text("Visitor Count")),
+            DataColumn(label: Text("Average Feedback")),
+          ],
+
+          rows: _departmentVisitors.map((data) {
+            return
+              DataRow(cells: [
+              DataCell(Text(data['button_id'].toString())),
+              DataCell(Text(data['button_name'].toString())),
+              DataCell(Text(data['counter_count'].toString())),
+              DataCell(Text(data['average_feedback']?.toString() ?? 'N/A')),
+            ]);
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _visualReport(){
+    double screenWidth = MediaQuery.of(context).size.width;
+    double containerWidth = screenWidth * 0.9;
+    return Container(
+      width: containerWidth,
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, spreadRadius: 2)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Dropdowns Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Text("Montly Statistics", style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold)),
+              SizedBox(width: 15),
+              // Flexible(
+              //   child: years.isEmpty ?
+              //   Text("Empty") :
+              //   DropdownButton<String>(
+              //     value: selectedYear,
+              //     onChanged: (String? newValue) {
+              //       if (newValue != null) {
+              //         setState(() {
+              //           selectedYear = newValue;
+              //           fetchMonths(selectedYear);
+              //         });
+              //       }
+              //     },
+              //     items: years.map((String year) {
+              //       return DropdownMenuItem(value: year, child: Text(year));
+              //     }).toList(),
+              //   ),
+              // ),
+              // Flexible(
+              //   child: months.isEmpty ?
+              //   Text("Empty") :
+              //   DropdownButton<String>(
+              //     value: selectedMonthValue,
+              //     onChanged: (String? newValue) {
+              //       if (newValue != null) {
+              //         setState(() {
+              //           selectedMonthValue = newValue;
+              //           selectedMonthName = months.firstWhere((month) => month["value"] == newValue)["name"]!;
+              //           fetchStatistics();
+              //         });
+              //       }
+              //     },
+              //     items: months.map((month) {
+              //       return DropdownMenuItem(value: month["value"], child: Text(month["name"]!));
+              //     }).toList(),
+              //   ),
+              // ),
+            ],
+          ),
+          SizedBox(height: 15),
+          
+          // First Chart
+          SizedBox(
+            height: 300,
+            child: statistics.isEmpty
+                ? Center(child: Text("No data available"))
+                : BarChart(
+                  BarChartData(
+                    gridData: FlGridData(
+                      drawHorizontalLine: true,
+                      drawVerticalLine: false  
+                    ),
+                    maxY: (statistics.values.isNotEmpty
+                            ? ((statistics.values.reduce((a, b) => a > b ? a : b) + 10) / 10).ceil() * 10
+                            : 10)
+                        .toDouble(),
+                    barGroups: getBarChartData(),
+                    titlesData: FlTitlesData(
+                      topTitles: AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          getTitlesWidget: (double value, TitleMeta meta) {
+                            int index = value.toInt();
+                            if (index < 0 || index >= departments.length) return Container(); // Prevent out-of-range errors
+                            return Padding(
+                              padding: EdgeInsets.only(top: 8),
+                              child: Transform.rotate(
+                                angle: -0.3,
+                                child: Text(
+                                  departments[index]["button_name"], 
+                                  style: GoogleFonts.poppins(fontSize: 12),
+                                ),
+                              ),
+                            );
+                          }
+                        ),
+                      ),
+                      // leftTitles: AxisTitles(
+                      //   sideTitles: SideTitles(
+                      //     showTitles: true,
+                      //     getTitlesWidget: (double value, TitleMeta meta) {
+                      //       return value % 5 == 0
+                      //           ? Text(value.toInt().toString(), style: GoogleFonts.poppins(fontSize: 12))
+                      //           : Container();
+                      //     },
+                      //   ),
+                      // ),
+                    ),
+                  ),
+                ),
+
+          ),
+
+          SizedBox(height: 15),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Text("Weekday Statistics", style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold)),
+              SizedBox(width: 10),
+              Flexible(
+                child:
+                departments.isEmpty ?
+                Text("Empty") :
+                DropdownButton<String>(
+                  value: departments[selectedDepartment]["button_name"],
+                  onChanged: (String? newValue) {
+                    if (newValue != null) {
+                      setState(() {
+                        selectedDepartment = departments.indexWhere((dept) => dept["button_name"] == newValue);
+                        fetchWeekdayStatistics();
+                      });
+                    }
+                  },
+                  items: departments.map((dept) {
+                    return DropdownMenuItem(
+                      value: dept["button_name"].toString(),
+                      child: Text(dept["button_name"].toString()),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(
+            height: 300,
+            child: weekdayStatistics.isEmpty
+                ? Center(child: Text("No data available"))
+                : BarChart(
+                    BarChartData(
+                      gridData: FlGridData(
+                        drawHorizontalLine: true,
+                        drawVerticalLine: false  
+                      ),
+                      maxY: (weekdayStatistics.values.isNotEmpty
+                              ? ((weekdayStatistics.values.reduce((a, b) => a > b ? a : b) + 10) / 10).ceil() * 10
+                              : 10)
+                          .toDouble(),
+                      barGroups: getWeekdayBarChartData(),
+                      titlesData: FlTitlesData(
+                        topTitles: AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            getTitlesWidget: (double value, TitleMeta meta) {
+                              return Transform.rotate(
+                                angle: -0.4,
+                                child: Text(weekdaysOrder[value.toInt()], style: GoogleFonts.poppins(fontSize: 12)),
+                              );
+                            },
+                          ),
+                        ),
+                        
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+
+  }
 }
+
+
 class DateInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {

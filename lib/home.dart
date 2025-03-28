@@ -147,7 +147,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
   
   Widget _buildCounterCard(String title, String count, String icon, int button_id) {
-    double screenWidth = MediaQuery.of(context).size.width;
     double buttonFontSize = 16;
     double titleFontSize = 18;
     double counterFontSize = 30;
