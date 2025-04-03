@@ -7,7 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:rating_and_feedback_collector/rating_and_feedback_collector.dart';
 import 'dart:convert';
-import 'home.dart';
+import 'home/home.dart';
 
 
 class CustomerFeedback extends StatefulWidget {
@@ -68,7 +68,7 @@ class _FeedbackPageState extends State<CustomerFeedback> {
           setState(() {
             _questions.clear(); 
             _questions = List<Map<String, dynamic>>.from(data);
-            _ratings = {for (var question in _questions) question['question_id']: 3.0};
+            _ratings = {for (var question in _questions) question['question_id']: 4.5};
           });
 
         } else {
@@ -87,7 +87,6 @@ class _FeedbackPageState extends State<CustomerFeedback> {
       _showDialog("Error", "Please select a department.");
       return;
     }
-
     final url = Uri.parse('http://$ip/kpi_itave/submit_feedback.php');
 
     String departmentId = _selectedDepartment != null
@@ -130,6 +129,7 @@ class _FeedbackPageState extends State<CustomerFeedback> {
   void _showSuccessDialog(String title, String message) {
     showDialog(
       context: context,
+      barrierDismissible: false, 
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text(title),

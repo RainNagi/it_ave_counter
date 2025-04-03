@@ -1,20 +1,14 @@
 // ignore_for_file: avoid_print
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:async';
-import 'login.dart';
-import 'dart:convert';
-import 'statistics.dart';
-import 'settings.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'iconlist.dart';
-import 'feedback.dart';
-
-// import 'statistics.dart';
+import 'bloc/navigator.dart';
+import 'bloc/counter.dart';
+import 'repository/fetch_department.dart';
+import '../common/iconlist.dart';
 
 class MyHomePage extends StatefulWidget {
   final String title;
@@ -25,132 +19,58 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  String ip = dotenv.get('IP_ADDRESS');
-  List<Map<String, dynamic>> _departments = [];
   final Map<String, IconData> _iconMap = IconDictionary.icons;
-  String username = "User"; // Default username
-  
+  String username = "User"; 
+  List<Map<String, dynamic>> departments = [];
   Map<String, bool> isButtonDisabled = {};
 
   @override
   void initState(){
     super.initState();
-    _fetchDepartments();
+    loadDepartments();
     _loadUsername(); 
   }
-  Future<void> _fetchDepartments() async {
-    final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=buttons&action=getdepartments');
-    try {
-      final response = await http.get(url);
 
-      if (response.statusCode == 200) {
-        List<dynamic> data = jsonDecode(response.body);
-
-        setState(() {
-          _departments.clear(); 
-          _departments = List<Map<String, dynamic>>.from(data);
-        });
-        isButtonDisabled = {
-          for (var department in _departments)
-            department["button_name"] as String: false
-        };
-
-      } else {
-        print("Failed to fetch departments: ${response.statusCode}");
-      }
-    } catch (e) {
-      print("Error fetching department data: $e");
-    }
+  void loadDepartments() async {
+    List<Map<String, dynamic>> fetchedDepartments = await fetchDepartments();
+    setState(() {
+      departments = fetchedDepartments;
+      isButtonDisabled = {
+        for (var department in departments) department["button_name"] as String: false
+      };
+    });
   }
 
-  Future<void> _sendClickData(int button_id) async {
-    String ip = dotenv.get('IP_ADDRESS');
-    
-    final url = Uri.parse('http://$ip/kpi_itave/store_click.php');
-    try {
-      final response = await http.post(url, body: {'button_id': button_id.toString()});
-      if (response.statusCode == 200) {
-        print("Click recorded successfully");
-      } else {
-        print("Failed to record click: \${response.statusCode}");
-      }
-    } catch (e) {
-      print("Error sending click data: $e");
-    }
-  }
-  
-  Future<void> _loadUsername() async {
+  void _loadUsername() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       username = prefs.getString("uname") ?? "User";
     });
   }
 
-
-  void _logout() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
-    );
-  }
-
-  void _goToStatistics(){
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => StatisticsPage())
-    );
-  }
-  void _goToCustomerFeedBack() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => CustomerFeedback())
-    );
-  }
-  void _goToSettings(){
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => SettingsPage())
-    );
-  }
-  
-
-  void _incrementCounter(String buttonType, int button_id) async {
-    bool? confirmAdd= await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text("Adding to $buttonType"),
-          content: Text("$buttonType Visitor?"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text("No"),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text("Yes", style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
-      },
-    );
-    if (confirmAdd == true) {
-      _sendClickData(button_id);
-      Future.delayed(Duration(seconds: 0), () {
-        setState(() {
-          _fetchDepartments();
-        });
-      });
-    }
-  }
-  
-  Widget _buildCounterCard(String title, String count, String icon, int button_id) {
+  Widget _buildCounterCard(String title, String count, String icon, int buttonId) {
+    
     double buttonFontSize = 16;
     double titleFontSize = 18;
     double counterFontSize = 30;
     double visitorFont = 10;
+    // var screenType = ResponsiveBreakpoints.of(context).breakpoint.name;
+    // double buttonFontSize;
+    // double titleFontSize;
+    // double counterFontSize;
+    // double visitorFont;
+
+    // if (screenType == MOBILE) {
+    //   buttonFontSize = 10;
+    //   titleFontSize = 12;
+    //   counterFontSize = 20;
+    //   visitorFont = 10;
+    // } else {
+    //   buttonFontSize = 16;
+    //   titleFontSize = 18;
+    //   counterFontSize = 30;
+    //   visitorFont = 10;
+    // }
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -161,7 +81,7 @@ class _MyHomePageState extends State<MyHomePage> {
           borderRadius: BorderRadius.circular(15),
         ),
         child: InkWell(
-          onTap: isButtonDisabled[title]! ? null : () =>  _incrementCounter(title,button_id),
+          onTap: isButtonDisabled[title]! ? null : () {incrementCounter(title,buttonId,context, loadDepartments);},
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -252,7 +172,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
               ElevatedButton(
-                onPressed: isButtonDisabled[title]! ? null : () { _incrementCounter(title, button_id); },
+                onPressed: isButtonDisabled[title]! ? null : () { incrementCounter(title, buttonId, context, loadDepartments);},
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color.fromRGBO(53, 53, 63, 1),
                   foregroundColor: Colors.white,
@@ -278,9 +198,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    var screenType = ResponsiveBreakpoints.of(context).breakpoint.name;
     double screenWidth = MediaQuery.of(context).size.width;
     double containerWidth = screenWidth * (screenWidth < 700?  1 : 0.8);
     double containerHeight = MediaQuery.of(context).size.height * 0.9;
+    double titleSize = screenType == MOBILE ? 15 : 20;
+    double navSize = screenType == MOBILE ? 25 : 30;
 
     return Scaffold(
       appBar: AppBar(
@@ -288,27 +211,42 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            // ResponsiveRowColumn(
+            //   layout: ResponsiveBreakpoints.of(context).smallerThan(DESKTOP)
+            //       ? ResponsiveRowColumnType.COLUMN
+            //       : ResponsiveRowColumnType.ROW,
+            //   children: [
+            //     ResponsiveRowColumnItem(
+            //       child: Expanded(child: Text("Left Section")),
+            //     ),
+            //     ResponsiveRowColumnItem(
+            //       child: Expanded(child: Text("Right Section")),
+            //     ),
+            //   ],
+            // ),
             ClipOval(
               child: Container(
                 color: Colors.white,
                 child: Image.asset(
                   'assets/image/logo.png',
-                  width: 50,
-                  height: 50,
+                  width: navSize,
+                  height: navSize,
                   fit: BoxFit.cover,
                 ),
               ),
             ),
-            Text(widget.title, style: GoogleFonts.poppins(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+            Text(widget.title, style: GoogleFonts.poppins(color: Colors.white, fontSize: titleSize, fontWeight: FontWeight.bold)),
             PopupMenuButton<int>(
-              icon: Icon(Icons.menu, color: Colors.white, size: 30),
+              icon: Icon(Icons.menu, color: Colors.white, size: navSize),
               onSelected: (value) {
                 if (value == 3) {
-                  _logout();
+                  logout(context);
                 } else if (value == 2) {
-                  _goToSettings();
+                  goToSettings(context);
                 } else if (value == 1) {
-                  _goToStatistics();
+                  goToStatistics(context);
+                } else if (value == 0) {
+                  print(departments);
                 }
               },
               itemBuilder: (context) => [
@@ -360,17 +298,11 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Container(
           width: containerWidth,
           height: containerHeight,
-          // color: Colors.red,
           padding: EdgeInsets.all(0),
-          // decoration: BoxDecoration(
-          //   color: Colors.white,
-          //   borderRadius: BorderRadius.circular(20),
-          //   boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, spreadRadius: 2)],
-          // ),
           child: Column(
             children: [
               Expanded(
-                child: _departments.length == 0 ? 
+                child: departments.isEmpty ? 
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -383,19 +315,19 @@ class _MyHomePageState extends State<MyHomePage> {
                 :
                 GridView.builder(
                   padding: const EdgeInsets.all(10),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2, 
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: screenType == DESKTOP ? 3 : screenType == TABLET ? 2 : 1, 
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
                     childAspectRatio: 1.5,
                   ),
-                  itemCount: _departments.length, 
+                  itemCount: departments.length, 
                   itemBuilder: (context, index) {
                     return _buildCounterCard(
-                      _departments[index]["button_name"] ?? "Unknown",
-                      _departments[index]['counter_count']?.toString() ?? "0",
-                      _departments[index]["button_icon"] ?? "default_icon",
-                      _departments[index]["button_id"] ?? 0,
+                      departments[index]["button_name"] ?? "Unknown",
+                      departments[index]['counter_count']?.toString() ?? "0",
+                      departments[index]["button_icon"] ?? "default_icon",
+                      departments[index]["button_id"] ?? 0,
                     );
                   },
                 ),
@@ -407,7 +339,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   children: [
                     ElevatedButton(
                       onPressed: () {
-                        _goToCustomerFeedBack();
+                        goToCustomerFeedBack(context);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
@@ -415,7 +347,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      child: Text("Feedback", style: GoogleFonts.poppins(fontSize: 18)),
+                      child: Text("Feedback", style: GoogleFonts.poppins(fontSize: screenType == MOBILE? 10 : 18 )),
                     ),
                   ],
                 )

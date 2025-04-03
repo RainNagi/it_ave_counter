@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:lucide_icons/lucide_icons.dart';
-import 'dart:convert';
-import 'register.dart';
-import 'home.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:responsive_framework/responsive_framework.dart';
+import 'repository/authentication.dart';
+import '/home/home.dart';
+import 'register.dart';
 
 
 class LoginPage extends StatefulWidget {
@@ -15,39 +14,25 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final authRepository = AuthRepository();
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   String errorMessage = "";
   bool _isObscure = true;
-  String ip = dotenv.get('IP_ADDRESS');
 
   void togglePasswordVisibility() {
     setState(() {
       _isObscure = !_isObscure;
     });
   }
-
-
   
   Future<void> login() async {
-    var url = Uri.parse("http://$ip/kpi_itave/auth-handler.php");
-    var response = await http.post(url, body: {
-      "action": "login",
-      "email": emailController.text,
-      "password": passwordController.text,
-    });
+    var data = await authRepository.login(emailController.text, passwordController.text);
 
-    print(url);
-    var data = jsonDecode(response.body);
-    
     if (data["status"] == "success") {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isLoggedIn', true);
       await prefs.setString('uname', data["uname"]);
-
-      setState(() {
-        errorMessage = "";
-      });
 
       Navigator.pushReplacement(
         context,
@@ -64,11 +49,18 @@ class _LoginPageState extends State<LoginPage> {
   
   @override
   Widget build(BuildContext context) {
+    var screenType = ResponsiveBreakpoints.of(context).breakpoint.name;
+    double iconSize = screenType == MOBILE ? 50 : 70; 
+    double titleSize = screenType == MOBILE ? 17 : 24;
+    double textFieldSize = screenType == MOBILE ? 35 : 50;
+    double textFieldFontSize = screenType == MOBILE ? 14 : 18;
+    double textFieldIconSize = screenType == MOBILE ? 20 : 25;
+
     return Scaffold(
       backgroundColor: Colors.grey[200],
       body: Center(
         child: Container(
-          width: 550,
+          width: screenType == MOBILE ? 350 : 550,
           padding: EdgeInsets.all(16.0),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -87,8 +79,8 @@ class _LoginPageState extends State<LoginPage> {
               ClipOval(
                 child: Image.asset(
                   'assets/image/logo.png',
-                  width: 70,
-                  height: 70,
+                  width: iconSize,
+                  height: iconSize,
                   fit: BoxFit.cover,
                 ),
               ),
@@ -96,63 +88,68 @@ class _LoginPageState extends State<LoginPage> {
               Text(
                 'Login',
                 style: GoogleFonts.poppins(
-                  fontSize: 24,
+                  fontSize: titleSize,
                   fontWeight: FontWeight.bold,
                   color: const Color.fromARGB(255, 227, 64, 55),
                 ),
               ),
               SizedBox(height: 10),
-              Container(
+              SizedBox(
                 width: 300,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    TextField(
-                      controller: emailController,
-                      style: TextStyle(color: Colors.black),
-                      decoration: InputDecoration(
-                        labelText: 'Email or Username',
-                        labelStyle: TextStyle(color: Colors.grey),
-                        floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 11, 129, 240)),
-                          border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    Container(
+                      height: textFieldSize,
+                      child: TextField(
+                        controller: emailController,
+                        style: TextStyle(color: Colors.black, fontSize:  textFieldFontSize),
+                        decoration: InputDecoration(
+                          labelText: 'Email or Username',
+                          labelStyle: TextStyle(color: Colors.grey, fontSize:  textFieldFontSize),
+                          floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 11, 129, 240)),
+                            border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Color.fromARGB(255, 11, 129, 240), width: 2)
+                          ),
+                          prefixIcon: Icon(LucideIcons.mail, size: textFieldIconSize),
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Color.fromARGB(255, 11, 129, 240), width: 2)
-                        ),
-                        prefixIcon: Icon(LucideIcons.mail),
                       ),
-                      
                     ),
-
                     SizedBox(height: 10),
-                    TextField(
-                      controller: passwordController,
-                      obscureText: _isObscure,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        labelStyle: TextStyle(color: Colors.grey),
-                        floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 11, 129, 240)),
-                          border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Color.fromARGB(255, 11, 129, 240), width: 2)
-                        ),
-                        prefixIcon: Icon(LucideIcons.lock),
-                        suffixIcon: IconButton(
-                          icon: Icon(_isObscure ? LucideIcons.eyeOff : LucideIcons.eye),
-                          onPressed: togglePasswordVisibility, 
+                    Container(
+                      height: textFieldSize,
+                      child: TextField(
+                        controller: passwordController,
+                        obscureText: _isObscure,
+                        style: TextStyle(color: Colors.black, fontSize:  textFieldFontSize),
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          labelStyle: TextStyle(color: Colors.grey, fontSize:  textFieldFontSize),
+                          floatingLabelStyle: TextStyle(color: Color.fromARGB(255, 11, 129, 240)),
+                            border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Color.fromARGB(255, 11, 129, 240), width: 2)
+                          ),
+                          prefixIcon: Icon(LucideIcons.lock, size: textFieldIconSize),
+                          suffixIcon: IconButton(
+                            icon: Icon(_isObscure ? LucideIcons.eyeOff : LucideIcons.eye, size: textFieldIconSize),
+                            onPressed: togglePasswordVisibility, 
+                          ),
                         ),
                       ),
                     ),
@@ -176,7 +173,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         child: Text(
                           'Login',
-                          style: GoogleFonts.poppins(fontSize: 18, color: Colors.white),
+                          style: GoogleFonts.poppins(color: Colors.white , fontSize:  screenType == MOBILE ? 14 : 18),
                         ),
                       ),
                     ),
@@ -187,7 +184,7 @@ class _LoginPageState extends State<LoginPage> {
                         children: [
                           Text(
                             "Don’t have an account?",
-                            style: GoogleFonts.poppins(color: Colors.black),
+                            style: GoogleFonts.poppins(color: Colors.black, fontSize:  screenType == MOBILE ? 10 : 14),
                           ),
                           SizedBox(width: 5,),
                           TextButton(
@@ -199,7 +196,7 @@ class _LoginPageState extends State<LoginPage> {
                             },
                             child: Text(
                               "Sign up",
-                              style: GoogleFonts.poppins(color: Color.fromARGB(255, 11, 129, 240)),
+                              style: GoogleFonts.poppins(color: Color.fromARGB(255, 11, 129, 240), fontSize:  screenType == MOBILE ? 10 : 14),
                             )
                           ),
                         ]
@@ -208,9 +205,7 @@ class _LoginPageState extends State<LoginPage> {
                   ]
                 ),
               ),
-              
             ],
-            
           ),
         ),
       ),

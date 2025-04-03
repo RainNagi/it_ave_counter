@@ -1,27 +1,32 @@
-// ignore_for_file: unused_import, avoid_print
+// ignore_for_file: unused_import, avoid_print, unnecessary_import, deprecated_member_use, avoid_web_libraries_in_flutter, prefer_interpolation_to_compose_strings
 
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
+import 'csv_download/csv_download_io.dart' if (dart.library.html) 'csv_download/csv_download_web.dart';
+import 'package:csv/csv.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cupertino_sidebar/cupertino_sidebar.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:convert';
-import 'home.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'package:file_saver/file_saver.dart';
+import 'home/home.dart';
 
 class StatisticsPage extends StatefulWidget {
   const StatisticsPage({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _StatisticsPageState createState() => _StatisticsPageState();
 }
 
 class _StatisticsPageState extends State<StatisticsPage> {
   String ip = dotenv.get('IP_ADDRESS');
+  
 
   @override
   void initState() {
@@ -31,6 +36,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
     _getDepartmentVisitors();
     _fetchDepartments();
     fetchStatistics();
+    fetchVisitors();
   }
 
   late List<Widget> _pages;
@@ -39,6 +45,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
   final TextEditingController _startingDateController = TextEditingController();
   final TextEditingController _endingDateController = TextEditingController();
 
+  List<dynamic> _visitors = [];
   List<dynamic> _departmentVisitors = [];
   Map<String, int> statistics = {};
   String selectedYear = DateTime.now().year.toString();
@@ -46,6 +53,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
   // String selectedMonthName = "January"; 
   int selectedDepartment = 1; 
   double barWidth = 30; 
+  int page = 1;
 
   // List<String> years = [];
   // List<Map<String, String>> months = [];
@@ -53,52 +61,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
   List<Map<String, dynamic>> departments = [];
   final List<String> weekdaysOrder = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-
-  // final List<String> monthNames = [
-  //   "January", "February", "March", "April", "May", "June",
-  //   "July", "August", "September", "October", "November", "December"
-  // ];
-  
-  // Future<void> fetchYears() async {
-    
-  //   final url = Uri.parse('http://$ip/kpi_itave/statistics1.php?action=getYears');
-  //   try {
-  //     final response = await http.get(url);
-  //     if (response.statusCode == 200) {
-  //       List<dynamic> data = jsonDecode(response.body);
-  //       setState(() {
-  //         years = List<String>.from(data);
-  //         selectedYear = years.first; 
-  //         fetchMonths(selectedYear);
-  //       });
-  //     }
-  //   } catch (e) {
-  //     print("Error fetching years: $e");
-  //   }
-  // }
-  // Future<void> fetchMonths(String year) async {
-  //   final url = Uri.parse('http://$ip/kpi_itave/statistics1.php?action=getMonths&year=$year');
-  //   try {
-  //     final response = await http.get(url);
-  //     if (response.statusCode == 200) {
-  //       List<dynamic> data = jsonDecode(response.body);
-  //       setState(() {
-  //         months = data.map<Map<String, String>>((monthValue) => {
-  //           "name": monthNames[int.parse(monthValue.toString()) - 1], 
-  //           "value": monthValue.toString()
-  //         }).toList();
-
-  //         if (months.isNotEmpty) {
-  //           selectedMonthValue = months.first["value"]!;
-  //           selectedMonthName = months.first["name"]!;
-  //           fetchStatistics();
-  //         }
-  //       });
-  //     }
-  //   } catch (e) {
-  //     print("Error fetching months: $e");
-  //   }
-  // }
   Future<void> fetchStatistics() async {
     final url = Uri.parse('http://$ip/kpi_itave/statistics1.php');
     try {
@@ -114,7 +76,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
           List<dynamic> data = jsonDecode(response.body);
           setState(() {
             statistics = {for (var item in data) item["button_id"].toString(): item["occurrences"]};
-
+            page = 1;
           });
         } catch (e) {
           print("Error decoding JSON: $e");
@@ -126,7 +88,23 @@ class _StatisticsPageState extends State<StatisticsPage> {
       print("Error fetching statistics: $e");
     }
   }
+  
+  int _getTotalVisitorCount() {
+    return _departmentVisitors.fold(0, (sum, data) => sum + int.parse(data['counter_count'].toString()));
+  }
 
+  double _getAverageFeedback() {
+    double totalFeedback = 0.0;
+    int count = 0;
+
+    for (var data in _departmentVisitors) {
+      if (data['average_feedback'] != null) {
+        totalFeedback += double.parse(data['average_feedback'].toString());
+        count++;
+      }
+    }
+    return count.round() > 0 ? totalFeedback / count : 0.0;
+  }
 
   Future<void> fetchWeekdayStatistics() async {
     final url = Uri.parse('http://$ip/kpi_itave/statistics1.php?action=getWeekdays&department=$selectedDepartment');
@@ -152,8 +130,27 @@ class _StatisticsPageState extends State<StatisticsPage> {
       print("Error fetching weekday statistics: $e");
     }
   }
+  Future<void> generateCSV(type) {
+    List<List<String>> rows = [];
+    if (type == "visitor_count") {
+      rows.add(["Visitor", "Department Visit", "TimeStamp"]);
+      _visitors.forEach((visitor) {
+        rows.add([visitor['id'].toString(), visitor['button_name'], visitor['timestamp']]);
+      });
+      rows.add(["","Total Visitors: ",_getTotalVisitorCount().toString()]);
+    } else if (type == "total_visitors") {
+      rows.add(["Department ID", "Department", "Visitor Count", "Average Feedback"]); 
+      _departmentVisitors.forEach((department) {
+        rows.add([department['button_id'].toString(), department['button_name'], department['counter_count'].toString(), department['average_feedback']?.toString() ?? 'N/A']);
+      });
+      rows.add(["","Total Visitors: ",_getTotalVisitorCount().toString()]);
+    }
 
-  
+    String csvData = const ListToCsvConverter().convert(rows);
+
+    return downloadCSV(context, csvData);
+  }
+
   Future<void> _selectDate(BuildContext context, controller) async {
     DateTime? picked = await showDatePicker(
       context: context,
@@ -165,9 +162,41 @@ class _StatisticsPageState extends State<StatisticsPage> {
     if (picked != null) {
       setState(() {
         controller.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+        if (_startingDateController.text.isNotEmpty && _endingDateController.text.isNotEmpty){
+          _getDepartmentVisitors();
+          fetchStatistics();
+          fetchWeekdayStatistics();
+          fetchVisitors();
+        } 
       });
     }
   }
+  Future<void> fetchVisitors() async {
+    final url = Uri.parse('http://$ip/kpi_itave/statistics.php?action=getVisitors');
+    try {
+      final response = await http.post(
+        url,
+        body: {
+          'starting_date': _startingDateController.text,
+          'ending_date': _endingDateController.text,
+        }
+      );
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = jsonDecode(response.body);
+        setState(() {
+          _visitors = List<Map<String, dynamic>>.from(data);
+          _reportTable();
+        });
+      } else {
+        print("Failed to fetch department: ${response.statusCode}");
+      }
+      
+    } catch (e) {
+      print("Error fetching department visitor data: $e");
+    }
+  }
+  
 
   Future<void> _getDepartmentVisitors() async {
     final url = Uri.parse('http://$ip/kpi_itave/statistics.php?action=getDepartmentVisitors');
@@ -269,8 +298,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
       ];
     }
     _pages = getPages();
-    double screenWidth = MediaQuery.of(context).size.width;
-    double containerWidth = screenWidth * 0.9;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color.fromRGBO(111, 5, 6, 1),
@@ -302,7 +329,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal:  16.0),
-                    width: 580,
+                    width: 530,
                     child: Text(
                       "Select Date: ",
                       style: GoogleFonts.poppins(
@@ -312,7 +339,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                       textAlign: TextAlign.start,
                     ),
                   ),
-                  
+                  SizedBox(height: 10,),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal:  16.0),
                     width: 1000,
@@ -320,7 +347,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Container(
+                        SizedBox(
                           width: 250,
                           child: TextField(
                             controller: _startingDateController,
@@ -339,10 +366,16 @@ class _StatisticsPageState extends State<StatisticsPage> {
                               FilteringTextInputFormatter.digitsOnly, 
                               DateInputFormatter(), 
                             ],
+                            onChanged: (value) {
+                              _getDepartmentVisitors();
+                              fetchStatistics();
+                              fetchWeekdayStatistics();
+                              fetchVisitors();
+                            },
                           ),
                         ),
                         SizedBox(width: 10,),
-                        Container(
+                        SizedBox(
                           width: 250,
                           child: TextField(
                             controller: _endingDateController,
@@ -361,30 +394,37 @@ class _StatisticsPageState extends State<StatisticsPage> {
                               FilteringTextInputFormatter.digitsOnly, 
                               DateInputFormatter(), 
                             ],
+                            onChanged: (value) {
+                              _getDepartmentVisitors();
+                              fetchStatistics();
+                              fetchWeekdayStatistics();
+                              fetchVisitors();
+                            },
                           ),
                         ),
-                        SizedBox(width: 10,),
-                        InkWell(
-                          onTap: (){
-                            _getDepartmentVisitors();
-                            fetchStatistics();
-                            fetchWeekdayStatistics();
-                          }, 
-                          child: Container(
-                            height: 40,
-                            width: 40,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.black),
-                              borderRadius: BorderRadius.all(Radius.circular(8))
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.search)
-                              ]
-                            )
-                          )
-                        ),
+                        // SizedBox(width: 10,),
+                        // InkWell(
+                        //   onTap: (){
+                        //     _getDepartmentVisitors();
+                        //     fetchStatistics();
+                        //     fetchWeekdayStatistics();
+                        //     fetchVisitors();
+                        //   }, 
+                        //   child: Container(
+                        //     height: 40,
+                        //     width: 40,
+                        //     decoration: BoxDecoration(
+                        //       border: Border.all(color: Colors.black),
+                        //       borderRadius: BorderRadius.all(Radius.circular(8))
+                        //     ),
+                        //     child: Row(
+                        //       mainAxisAlignment: MainAxisAlignment.center,
+                        //       children: [
+                        //         Icon(Icons.search)
+                        //       ]
+                        //     )
+                        //   )
+                        // ),
                       ],
                     )
                   ),
@@ -431,34 +471,152 @@ class _StatisticsPageState extends State<StatisticsPage> {
     );
   }
   Widget _reportTable() {
-    return SizedBox(
-      child: SingleChildScrollView(
-        scrollDirection: Axis.vertical,
-        child: DataTable(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.black),
-            borderRadius: BorderRadius.all(Radius.circular(8)),
-            color: Colors.white
+    return Container(
+      width: double.infinity,
+      child: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text( 
+                  "Department Visitors", 
+                  style: GoogleFonts.poppins(
+                    fontSize: 16, color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                ElevatedButton(
+                  onPressed: () {generateCSV("visitor_count");},
+                  child: Text("Download CSV", style: TextStyle(fontSize: 16)),
+                ),
+              ],
+            ),
           ),
-          columns: [
-            DataColumn(label: Text("Department ID")),
-            DataColumn(label: Text("Department")),
-            DataColumn(label: Text("Visitor Count")),
-            DataColumn(label: Text("Average Feedback")),
-          ],
+          SizedBox(height: 20,),
+          Container(
+            width: double.infinity,
+            height: 530,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.black),
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+              color: Colors.white
+            ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.vertical,
+              child: DataTable(
+                headingTextStyle: GoogleFonts.poppins(
+                  textStyle: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                columns: [
+                  DataColumn(label: MouseRegion(child: Text("Visitor ID")), headingRowAlignment: MainAxisAlignment.center),
+                  DataColumn(label: Text("Department Visit"), headingRowAlignment: MainAxisAlignment.center),
+                  DataColumn(label: Text("TimeStamp"), headingRowAlignment: MainAxisAlignment.center),
+                ],
 
-          rows: _departmentVisitors.map((data) {
-            return
-              DataRow(cells: [
-              DataCell(Text(data['button_id'].toString())),
-              DataCell(Text(data['button_name'].toString())),
-              DataCell(Text(data['counter_count'].toString())),
-              DataCell(Text(data['average_feedback']?.toString() ?? 'N/A')),
-            ]);
-          }).toList(),
-        ),
-      ),
+                rows: [
+                  ..._visitors.skip((page-1)*30).take(30).map((data) {
+                  return DataRow(cells: [
+                    DataCell(Center(child: Text(data['id'].toString()))),
+                    DataCell(Center(child: Text(data['button_name'].toString()))),
+                    DataCell(Center(child: Text(data['timestamp'].toString()))),
+                  ]);
+                  }),
+
+                  DataRow(cells: [
+                    DataCell(Center(child: Text(""))), 
+                    DataCell(Center(child: Text("Total Visitors", style: TextStyle(fontWeight: FontWeight.bold,)))), 
+                    DataCell(Center(child: Text(_getTotalVisitorCount().toString(), style: TextStyle(fontWeight: FontWeight.bold,)))), 
+                  ]),
+                  DataRow(cells: [
+                    DataCell(Center(child: page == 1? Text("") : ElevatedButton(onPressed: () {page -= 1;  fetchVisitors();}, child: Text("<")))),
+                    DataCell(Center(child: Text("$page"))),  
+                    DataCell(Center(child: _visitors.skip((page-1)*30).take(30).length < 30? Text("") : ElevatedButton(onPressed: () {page += 1;  fetchVisitors(); }, child: Text(">")))),  
+                  ]),
+                ]
+              ),
+            ),
+          ),
+          SizedBox(height: 30,),
+          Padding(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text( 
+                  "Department Visitor Count", 
+                  style: GoogleFonts.poppins(
+                    fontSize: 16, color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                ElevatedButton(
+                  onPressed: () {generateCSV("total_visitors");},
+                  child: Text("Download CSV", style: TextStyle(fontSize: 16)),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 20,),
+          Container(
+            width: double.infinity,
+            height: 530,
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.black),
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+              color: Colors.white
+            ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.vertical,
+              child: DataTable(
+                headingTextStyle: GoogleFonts.poppins(
+                  textStyle: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                columns: [
+                  DataColumn(label: Text("Department ID"), headingRowAlignment: MainAxisAlignment.center),
+                  DataColumn(label: Text("Department"), headingRowAlignment: MainAxisAlignment.center),
+                  DataColumn(label: Text("Visitor Count"), headingRowAlignment: MainAxisAlignment.center),
+                  DataColumn(label: Text("Average Feedback"), headingRowAlignment: MainAxisAlignment.center),
+                ],
+
+                rows: [
+                  ..._departmentVisitors.map((data) {
+                  return DataRow(cells: [
+                    DataCell(Center(child: Text(data['button_id'].toString()))),
+                    DataCell(Center(child: Text(data['button_name'].toString()))),
+                    DataCell(Center(child: Text(data['counter_count'].toString()))),
+                    DataCell(Center(child: Text(data['average_feedback']?.toString() ?? 'N/A'))),
+                  ]);
+                  }).toList(),
+
+                  DataRow(cells: [
+                    DataCell(Center(child: Text(""))), 
+                    DataCell(Center(child: Text("Totals", style: TextStyle(fontWeight: FontWeight.bold,)))), 
+                    DataCell(Center(child: Text(_getTotalVisitorCount().toString(), style: TextStyle(fontWeight: FontWeight.bold,)))), 
+                    DataCell(Center(child: Text(_getAverageFeedback().toString(), style: TextStyle(fontWeight: FontWeight.bold,)))),
+                  ]),
+                ]
+              ),
+            ),
+          ),
+          
+        ]
+      )
     );
+    
   }
 
   Widget _visualReport(){
@@ -479,50 +637,11 @@ class _StatisticsPageState extends State<StatisticsPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Text("Montly Statistics", style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text("Visitor Counts", style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold)),
               SizedBox(width: 15),
-              // Flexible(
-              //   child: years.isEmpty ?
-              //   Text("Empty") :
-              //   DropdownButton<String>(
-              //     value: selectedYear,
-              //     onChanged: (String? newValue) {
-              //       if (newValue != null) {
-              //         setState(() {
-              //           selectedYear = newValue;
-              //           fetchMonths(selectedYear);
-              //         });
-              //       }
-              //     },
-              //     items: years.map((String year) {
-              //       return DropdownMenuItem(value: year, child: Text(year));
-              //     }).toList(),
-              //   ),
-              // ),
-              // Flexible(
-              //   child: months.isEmpty ?
-              //   Text("Empty") :
-              //   DropdownButton<String>(
-              //     value: selectedMonthValue,
-              //     onChanged: (String? newValue) {
-              //       if (newValue != null) {
-              //         setState(() {
-              //           selectedMonthValue = newValue;
-              //           selectedMonthName = months.firstWhere((month) => month["value"] == newValue)["name"]!;
-              //           fetchStatistics();
-              //         });
-              //       }
-              //     },
-              //     items: months.map((month) {
-              //       return DropdownMenuItem(value: month["value"], child: Text(month["name"]!));
-              //     }).toList(),
-              //   ),
-              // ),
             ],
           ),
           SizedBox(height: 15),
-          
-          // First Chart
           SizedBox(
             height: 300,
             child: statistics.isEmpty
@@ -561,16 +680,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
                           }
                         ),
                       ),
-                      // leftTitles: AxisTitles(
-                      //   sideTitles: SideTitles(
-                      //     showTitles: true,
-                      //     getTitlesWidget: (double value, TitleMeta meta) {
-                      //       return value % 5 == 0
-                      //           ? Text(value.toInt().toString(), style: GoogleFonts.poppins(fontSize: 12))
-                      //           : Container();
-                      //     },
-                      //   ),
-                      // ),
                     ),
                   ),
                 ),
@@ -655,11 +764,11 @@ class DateInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
     String digitsOnly = newValue.text.replaceAll(RegExp(r'\D'), ''); 
-
     String formatted = "";
-    if (digitsOnly.length > 3) {
-      formatted += "${digitsOnly.substring(0, 4)}-";
-      if (digitsOnly.length > 5) {
+
+    if (digitsOnly.length > 4) {
+      formatted = "${digitsOnly.substring(0, 4)}-";
+      if (digitsOnly.length > 6) {
         formatted += "${digitsOnly.substring(4, 6)}-";
         formatted += digitsOnly.substring(6, digitsOnly.length.clamp(6, 8));
       } else {
@@ -668,10 +777,17 @@ class DateInputFormatter extends TextInputFormatter {
     } else {
       formatted = digitsOnly;
     }
+
+    // Remove trailing '-' if it exists
+    if (formatted.endsWith('-')) {
+      formatted = formatted.substring(0, formatted.length - 1);
+    }
+
     return TextEditingValue(
       text: formatted,
       selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }
+
 
