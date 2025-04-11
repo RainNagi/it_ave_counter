@@ -5,13 +5,12 @@ import 'package:http/http.dart' as http;
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:rating_and_feedback_collector/rating_and_feedback_collector.dart';
 import 'package:cupertino_sidebar/cupertino_sidebar.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:convert';
-import '../home/home.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../common/iconlist.dart';
+import '../home/home.dart';
+import 'common/widget_cards.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -23,8 +22,6 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   String ip = dotenv.get('IP_ADDRESS');  
   
-  final Map<String, IconData> _iconMap = IconDictionary.icons;
-  String _iconSearchQuery = '';
   String _selectedIcon = "lucide_plus_circle";
 
   // Button CRUD
@@ -32,7 +29,6 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isAddingDepartment = false;
   bool _isEditingDepartment = false;
   int _selectedDepartment = 0;
-  String _newDepartmentName = "";
   TextEditingController departmentNameController = TextEditingController();
   String _searchQuery = '';
 
@@ -41,7 +37,6 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isAddingQuestion = false;
   bool _isEditingQuestion = false;
   int _selectedQuestion = 1;
-  double _rating = 2.5;
   TextEditingController _questionController = TextEditingController();
 
   @override
@@ -124,7 +119,7 @@ class _SettingsPageState extends State<SettingsPage> {
       final response = await http.post(
         url,
         body: {
-          'button_name': _newDepartmentName,
+          'button_name': departmentNameController.text,
           'button_icon': _selectedIcon,
         },
       );
@@ -146,7 +141,6 @@ class _SettingsPageState extends State<SettingsPage> {
       if (responseData['status'] == 'success') {
         setState(() {
           _isAddingDepartment = false;
-          _newDepartmentName = "";
           _selectedIcon = "lucide_plus_circle";
           departmentNameController.clear();
         });
@@ -168,7 +162,7 @@ class _SettingsPageState extends State<SettingsPage> {
         url,
         body: {
           'button_id' : deptId.toString(),
-          'button_name': _newDepartmentName,
+          'button_name': departmentNameController.text,
           'button_icon': _selectedIcon == "lucide_plus_circle"? defaultIcon : _selectedIcon,
         },
       );
@@ -180,7 +174,6 @@ class _SettingsPageState extends State<SettingsPage> {
       if (responseData['status'] == 'success') {
         setState(() {
           _isEditingDepartment = false;
-          _newDepartmentName = "";
           _selectedIcon = "lucide_plus_circle";
           departmentNameController.clear();
           _fetchDepartments();
@@ -189,6 +182,17 @@ class _SettingsPageState extends State<SettingsPage> {
     } catch (e) {
       _showDialog("Error", "Failed to edit department: $e");
     }
+  }
+  void cancelAll() {
+    setState(() {
+      _isEditingQuestion = false;
+      _isAddingDepartment = false;
+      _isEditingDepartment = false;
+      _isAddingQuestion = false;
+      _questionController.clear();
+      departmentNameController.clear();
+    });
+    return ;
   }
 
   // question CRUD
@@ -372,11 +376,23 @@ class _SettingsPageState extends State<SettingsPage> {
       },
     );
   }
+  Widget buildPage() {
+    var screenType = ResponsiveBreakpoints.of(context).breakpoint.name;
+    if (screenType == MOBILE) {
+      return _phonePages.elementAt(_selectedIndex);
+    } else if (screenType == TABLET) {
+      return _tabletPages.elementAt(_selectedIndex);
+    } else {
+      return _pages.elementAt(_selectedIndex);
+    }
+  }
+
 
 
 
   late List<Widget> _pages;
   late List<Widget> _tabletPages;
+  late List<Widget> _phonePages;
   int _selectedIndex = 0;
 
   @override
@@ -397,6 +413,13 @@ class _SettingsPageState extends State<SettingsPage> {
         _questionCRUDTablet(),
       ];
     }
+    List<Widget> getPhonePages() {
+      return [
+        _buttonCRUDPhone(),
+        _questionCRUDPhone(),
+      ];
+    }
+    _phonePages = getPhonePages();
     _tabletPages = getTabletPages();
     _pages = getPages();
     return Scaffold(
@@ -445,13 +468,26 @@ class _SettingsPageState extends State<SettingsPage> {
                           return CupertinoFloatingTabBar(
                             isVibrant: true,
                             onDestinationSelected: (value) {
-                                setState(() {
-                                  _selectedIndex = value;
-                                });
+                              setState(() {
+                                cancelAll();
+                                _selectedIndex = value;
+                              });
                             },
-                            tabs: const [
-                                CupertinoFloatingTab(child: Text('Department')),
-                                CupertinoFloatingTab(child: Text('Questions')),
+                            tabs: [
+                              CupertinoFloatingTab(child: Text('Department', style: GoogleFonts.poppins(fontSize: ResponsiveValue<double>(context, 
+                                  defaultValue: 18.0, 
+                                  conditionalValues: [
+                                    Condition.smallerThan(name: TABLET, value: 10.0),
+                                    Condition.largerThan(name: TABLET, value: 16.0),
+                                  ],
+                                ).value,),)),
+                              CupertinoFloatingTab(child: Text('Questions', style: GoogleFonts.poppins(fontSize: ResponsiveValue<double>(context, 
+                                  defaultValue: 18.0, 
+                                  conditionalValues: [
+                                    Condition.smallerThan(name: TABLET, value: 10.0),
+                                    Condition.largerThan(name: TABLET, value: 16.0),
+                                  ],
+                                ).value,),)),
                             ],
                           );
                         },
@@ -464,12 +500,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ],
         ),
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          double screenWidth = constraints.maxWidth;
-          return screenWidth > 800 ? _pages.elementAt(_selectedIndex) : _tabletPages.elementAt(_selectedIndex); 
-        }
-      ),
+      body: buildPage()
     );
   }
 
@@ -501,7 +532,6 @@ class _SettingsPageState extends State<SettingsPage> {
                         onPressed: () => setState(() {
                           _isAddingDepartment = false;
                           _isEditingDepartment = false;
-                          _newDepartmentName = "";
                           _selectedIcon = "lucide_plus_circle";
                           departmentNameController.clear();
                         }),
@@ -665,8 +695,9 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: Column(
                     children: [                      
                       _selectedDepartment != 0 
-                        ? _buttonCard(_selectedDepartment) 
-                        : _buttonCard(0),
+                        ? buttonCard(_departments, _selectedDepartment, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon) 
+                        : 
+                        buttonCard(_departments, 0, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon),
                       _isAddingDepartment || _isEditingDepartment?
                       SizedBox(
                         width: 150,
@@ -726,7 +757,6 @@ class _SettingsPageState extends State<SettingsPage> {
                         child: ElevatedButton(
                           onPressed: () => setState(() {
                              _isAddingDepartment = true;
-                            _newDepartmentName = "";
                             // _selectedIcon = null;
                           }),
                           style: ElevatedButton.styleFrom(
@@ -752,7 +782,8 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
   Widget _buttonCRUDTablet() {
-    return Card(
+    return SingleChildScrollView(
+      child: Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       // color: Colors.blue,
       child: Padding(
@@ -881,8 +912,8 @@ class _SettingsPageState extends State<SettingsPage> {
               height: 300,
               child:                   
                 _selectedDepartment != 0 
-                  ? _buttonCard(_selectedDepartment) 
-                  : _buttonCard(0),
+                  ? buttonCard(_departments, _selectedDepartment, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon) 
+                  : buttonCard(_departments, 0, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon),
             ),
             SizedBox(height: 10,),
             _isAddingDepartment || _isEditingDepartment ?
@@ -961,310 +992,278 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
             SizedBox(height: 10,),
-            Expanded(
-              child: SizedBox(
-                width: 1000,
-                child: GridView.builder(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: 1.5,
-                  ),
-                  itemCount: _departments.length,
-                  itemBuilder: (context, index) {
-                    return _departmentListCard(index);
-                  },
+            SizedBox(
+              width: double.infinity,
+              height: 480,
+              child: GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 1.5,
                 ),
+                itemCount: _departments.length,
+                itemBuilder: (context, index) {
+                  return _listCard("department",index);
+                },
               ),
             ),
           ],
         ),
       ),
-    );
+    ));
   }
-  Widget _departmentListCard(int id) {
-    int deptNo = id; 
+  Widget _buttonCRUDPhone() {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: InkWell(
-        onTap: () {
-          _isEditingDepartment || _isAddingDepartment ? print("None") :
-          setState(() {
-            _selectedDepartment = deptNo;
-            _fetchDepartments();
-          });
-        },
-        child: Container(
-          padding: EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            border: Border.all(color: Color.fromARGB(91, 0, 0, 0)),
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  _departments[deptNo]["button_name"],
-                  style: GoogleFonts.poppins(
-                    fontSize: 20, 
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                  softWrap: true,
-                ),
-                SizedBox(height: 5),
-                Container(width: 30, height: 2, color: Color.fromRGBO(111, 5, 6, 1)),
-              ],
-            ),
-          ),
-        ),
-      )
-    );
-  }
-  Widget _buttonCard(int department){
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Container(
-        height: 350,
-        padding: EdgeInsets.all(5),
-        decoration: BoxDecoration(
-          border: Border.all(color: Color.fromARGB(91, 0, 0, 0)),
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Container(
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(15),
-                    topRight: Radius.circular(15),
-                  ),
-                  color: Colors.white,
-                ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    double screenWidth = constraints.maxWidth;
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                     _isAddingDepartment || _isEditingDepartment
-                                      ? SizedBox(
-                                        width: 400,
-                                        child: Column(
-                                          children: [
-                                            TextField(
-                                              decoration: InputDecoration(labelText: _isEditingDepartment ? _departments[department]["button_name"] : "Department Name"),
-                                              controller: departmentNameController,
-                                              onChanged: (value) => setState(() => _newDepartmentName = value),
-                                            ),
-                                            SizedBox(height: 10,),
-                                          ],
-                                        )
-                                      )
-                                      : Text(
-                                          _departments.isNotEmpty ? _departments[department]["button_name"] : "Department",
-                                          style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold),
-                                        ),
-                                    Container(width: 40, height: 5, color: Color.fromRGBO(111, 5, 6, 1)),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(width: screenWidth * 0.05),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  _isAddingDepartment
-                                  ? 
-                                  Text("100",
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 25, 
-                                      color: Colors.black, 
-                                      fontWeight: FontWeight.bold
-                                    ),
-                                    textAlign: TextAlign.center
-                                  ) :
-                                  Text(_departments.isNotEmpty ? _departments[department]['counter_count'].toString() : "100",
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 25, 
-                                      color: Colors.black, 
-                                      fontWeight: FontWeight.bold
-                                    ),
-                                    textAlign: TextAlign.center
-                                  ),
-                                  Text('Visitors',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 10,
-                                      color: Colors.grey[700]
-                                    ), 
-                                    textAlign: TextAlign.center
-                                  ),
-                                ],
-                              )
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              double availableHeight = constraints.maxHeight; // Get dynamic height
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SizedBox(height: availableHeight * 0.1),
-                                  _isAddingDepartment || _isEditingDepartment?
-                                  GestureDetector(
-                                    onTap:()=> setState(() {
-                                      _showIconPickerDialog();
-                                    }),
-                                    child: Icon(
-                                      _selectedIcon == 'lucide_plus_circle' && _isEditingDepartment ? IconDictionary.icons[_departments[department]["button_icon"]] :_iconMap[_selectedIcon],
-                                      size: availableHeight * 0.5,
-                                      color: Color.fromRGBO(151, 81, 2, 1),
-                                    ),
-                                  ):
-                                  Icon(_departments.isNotEmpty ? IconDictionary.icons[_departments[department]["button_icon"]] : LucideIcons.plusCircle, size: availableHeight * 0.5, color: Color.fromRGBO(151, 81, 2, 1)), // Scale icon size
-                                  SizedBox(height: availableHeight * 0.05),
-                                ],
-                              );
-                            },
-                          ),
-                        )
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () => {
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color.fromRGBO(53, 53, 63, 1),
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(15),
-                    bottomRight: Radius.circular(15),
-                  ),
-                ),
-              ),
-              child: Center(
-                child: 
-                _isAddingDepartment || _isEditingDepartment?
-                Text("$_newDepartmentName Visitor", style: GoogleFonts.poppins(fontSize: 12), textAlign: TextAlign.center)
-                :
-                Text(_departments.isNotEmpty ? _departments[department]["button_name"]+" Visitor": "Department Visitor", style: GoogleFonts.poppins(fontSize: 12), textAlign: TextAlign.center),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showIconPickerDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            List<String> filteredIcons = _iconMap.keys
-                .where((key) => key.toLowerCase().contains(_iconSearchQuery.toLowerCase()) && key != "lucide_plus_circle")
-                .toList();
-            return AlertDialog(
-              title: const Text("Icon Picker"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    decoration: const InputDecoration(
-                      labelText: "Search Icon",
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.search),
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        _iconSearchQuery = value;
-                      });
-                    },
-                  ),
-                  SizedBox(height: 10),
-                  SizedBox(
-                    width: 300,
-                    height: 300,
-                    child: GridView.builder(
-                      padding: const EdgeInsets.all(10),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 2,
-                        mainAxisSpacing: 2,
-                      ),
-                      itemCount: filteredIcons.length,
-                      itemBuilder: (context, index) {
-                        String iconName = filteredIcons[index];
-                        return  GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedIcon = iconName;
-                            });
-                            _fetchDepartments();
-                            Navigator.pop(context);
-                          },
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(_iconMap[iconName], size: 40, color: Colors.black),
-                              Text(iconName, style: const TextStyle(fontSize: 12)),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-  Widget _questionCRUDTablet() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      // color: Colors.blue,
       child: Padding(
-        padding: EdgeInsets.all(30),
+        padding: EdgeInsets.all(10),
         child: Column(
           children: [
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10),
+              padding: EdgeInsets.symmetric(horizontal: 5),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    'Survey Questionaires',
-                    style: GoogleFonts.poppins(fontSize: 20, color: const Color.fromARGB(255, 0, 0, 0), fontWeight: FontWeight.bold),
+                    'Department',
+                    style: GoogleFonts.poppins(fontSize: 15, color: const Color.fromARGB(255, 0, 0, 0), fontWeight: FontWeight.bold),
+                  ),
+                  _isAddingDepartment || _isEditingDepartment ?
+                  Row(
+                    children: [
+                      ElevatedButton(
+                        onPressed: () => setState(() {
+                          _isAddingDepartment = false;
+                          _isEditingDepartment = false;
+                        }),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              LucideIcons.xCircle,
+                              color: const Color.fromARGB(255, 156, 20, 20),
+                              size: 10,
+                            ),
+                            SizedBox(width: 1),
+                            Text(
+                              "Cancel",
+                              style: GoogleFonts.poppins(
+                                fontSize: 10, 
+                                color: const Color.fromARGB(255, 156, 20, 20)
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ]
+                  )
+                  : 
+                  _departments.isEmpty ? Text("") :
+                  Row(
+                    children: [
+                      ElevatedButton(
+                        onPressed: () async {
+                          bool? confirmDelete = await showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text("Confirm Delete"),
+                                content: Text("Are you sure you want to delete this?"),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(false),
+                                    child: Text("Cancel"),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(true),
+                                    child: Text("Delete", style: TextStyle(color: Colors.red)),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                          if (confirmDelete == true) {
+                            _archiveDepartment(_selectedDepartment);
+                          }
+                        },
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              CupertinoIcons.delete,
+                              color: Color.fromARGB(255, 0, 0, 0),
+                              size: 10,
+                            ),
+                            SizedBox(width: 2),
+                            Text(
+                              "Delete",
+                              style: GoogleFonts.poppins(
+                                fontSize: 10, 
+                                color: Color.fromARGB(255, 144, 0, 0),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 4,),
+                      ElevatedButton(
+                        onPressed: () => setState(() {
+                          _isEditingDepartment = true;
+                        }),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              LucideIcons.edit,
+                              color: const Color.fromARGB(255, 0, 0, 0),
+                              size: 10,
+                            ),
+                            SizedBox(width: 2),
+                            Text(
+                              "Edit",
+                              style: GoogleFonts.poppins(
+                                fontSize: 10, 
+                                color: const Color.fromARGB(255, 0, 0, 0)
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            ),
+            SizedBox(height: 10),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 1),
+              height: 200,
+              child:                   
+                _selectedDepartment != 0 
+                  ? buttonCard(_departments, _selectedDepartment, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon) 
+                  : buttonCard(_departments, 0, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon),
+            ),
+            SizedBox(height: 10,),
+            _isAddingDepartment || _isEditingDepartment ?
+            SizedBox(
+              width: 150,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () async {
+                  bool? confirmAdd = await showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title:  Text(_isAddingDepartment ? "Adding Department":"Editing "+_departments[_selectedDepartment]["button_name"]+ " Department", style: GoogleFonts.poppins(fontSize: 10),),
+                        content: Text("Are you sure you want to save this?"),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: Text("No"),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: Text("Yes", style: TextStyle(color: Colors.red)),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                  if (confirmAdd == true) {
+                    _isAddingDepartment? _addDepartment() : _editDepartment();
+                    _fetchDepartments();
+                    
+                  }
+                },
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      LucideIcons.save,
+                      color: const Color.fromARGB(255, 0, 0, 0),
+                      size: 15,
+                    ),
+                    SizedBox(width: 2),
+                    Text(
+                      "Save",
+                      style: GoogleFonts.poppins(
+                        fontSize: 15, 
+                        color: const Color.fromARGB(255, 0, 0, 0)
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            )
+            :
+            SizedBox(
+              height: 40,
+              child: SizedBox(
+                width: 70,
+                child: 
+                ElevatedButton(
+                  onPressed: () => setState(() {
+                    _isAddingDepartment = true;
+                  }),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(15))
+                    ),
+                  ),
+                  child: Center(
+                    child: Icon(LucideIcons.plus, size: 20,),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 10,),
+            Expanded(
+              child: SizedBox(
+                width: double.infinity,
+                child: GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 5,
+                    mainAxisSpacing: 5,
+                    childAspectRatio: 1.5,
+                  ),
+                  itemCount: _departments.length,
+                  itemBuilder: (context, index) {
+                    return _listCard("department",index);
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  Widget _questionCRUDPhone() {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      // color: Colors.blue,
+      child: Padding(
+        padding: EdgeInsets.all(10),
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 5),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 150,
+                    child: Text(
+                      'Survey Questionaires',
+                      style: GoogleFonts.poppins(fontSize: 15, color: const Color.fromARGB(255, 0, 0, 0), fontWeight: FontWeight.bold),softWrap: true
+                    ),
                   ),
                   _isAddingQuestion || _isEditingQuestion ?
                   Row(
@@ -1280,13 +1279,13 @@ class _SettingsPageState extends State<SettingsPage> {
                             Icon(
                               LucideIcons.xCircle,
                               color: const Color.fromARGB(255, 156, 20, 20),
-                              size: 15,
+                              size: 10,
                             ),
-                            SizedBox(width: 2),
+                            SizedBox(width: 1),
                             Text(
                               "Cancel",
                               style: GoogleFonts.poppins(
-                                fontSize: 15, 
+                                fontSize: 10, 
                                 color: const Color.fromARGB(255, 156, 20, 20)
                               ),
                             ),
@@ -1330,20 +1329,20 @@ class _SettingsPageState extends State<SettingsPage> {
                             Icon(
                               CupertinoIcons.delete,
                               color: Color.fromARGB(255, 0, 0, 0),
-                              size: 15,
+                              size: 10,
                             ),
-                            SizedBox(width: 2),
+                            SizedBox(width: 1),
                             Text(
                               "Delete",
                               style: GoogleFonts.poppins(
-                                fontSize: 15, 
+                                fontSize: 10, 
                                 color: Color.fromARGB(255, 144, 0, 0),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      SizedBox(width: 10,),
+                      SizedBox(width: 5,),
                       ElevatedButton(
                         onPressed: () => setState(() {
                           _isEditingQuestion = true;
@@ -1354,13 +1353,13 @@ class _SettingsPageState extends State<SettingsPage> {
                             Icon(
                               LucideIcons.edit,
                               color: const Color.fromARGB(255, 0, 0, 0),
-                              size: 15,
+                              size: 10,
                             ),
-                            SizedBox(width: 2),
+                            SizedBox(width: 1),
                             Text(
                               "Edit",
                               style: GoogleFonts.poppins(
-                                fontSize: 15, 
+                                fontSize: 10, 
                                 color: const Color.fromARGB(255, 0, 0, 0)
                               ),
                             ),
@@ -1374,9 +1373,9 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             SizedBox(height: 10),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 70),
-              height: 300,
-              child: _questionCard()
+              padding: EdgeInsets.symmetric(horizontal: 5),
+              height: 200,
+              child: questionCard(_questions,_isAddingQuestion,_isEditingQuestion,_selectedQuestion,_questionController)
             ),
             SizedBox(height: 10,),
             _isAddingQuestion || _isEditingQuestion ?
@@ -1417,13 +1416,13 @@ class _SettingsPageState extends State<SettingsPage> {
                     Icon(
                       LucideIcons.save,
                       color: const Color.fromARGB(255, 0, 0, 0),
-                      size: 15,
+                      size: 10,
                     ),
                     SizedBox(width: 2),
                     Text(
                       "Save",
                       style: GoogleFonts.poppins(
-                        fontSize: 15, 
+                        fontSize: 10, 
                         color: const Color.fromARGB(255, 0, 0, 0)
                       ),
                     ),
@@ -1457,17 +1456,17 @@ class _SettingsPageState extends State<SettingsPage> {
             SizedBox(height: 10,),
             Expanded(
               child: SizedBox(
-                width: 1000,
+                width: double.infinity,
                 child: GridView.builder(
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 5,
+                    mainAxisSpacing: 5,
                     childAspectRatio: 1.5,
                   ),
                   itemCount: _questions.length,
                   itemBuilder: (context, index) {
-                    return _questionListCard(index);
+                    return _listCard("question",index);
                   },
                 ),
               ),
@@ -1478,7 +1477,239 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
   
+  
 
+  
+  Widget _questionCRUDTablet() {
+    return SingleChildScrollView(
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        // color: Colors.blue,
+        child: Padding(
+          padding: EdgeInsets.all(30),
+          child: Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Survey Questionaires',
+                      style: GoogleFonts.poppins(fontSize: 20, color: const Color.fromARGB(255, 0, 0, 0), fontWeight: FontWeight.bold),
+                    ),
+                    _isAddingQuestion || _isEditingQuestion ?
+                    Row(
+                      children: [
+                        ElevatedButton(
+                          onPressed: () => setState(() {
+                            _isAddingQuestion = false;
+                            _isEditingQuestion = false;
+                          }),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Icon(
+                                LucideIcons.xCircle,
+                                color: const Color.fromARGB(255, 156, 20, 20),
+                                size: 15,
+                              ),
+                              SizedBox(width: 2),
+                              Text(
+                                "Cancel",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 15, 
+                                  color: const Color.fromARGB(255, 156, 20, 20)
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ]
+                    )
+                    : 
+                    _questions.isEmpty ? Text("") :
+                    Row(
+                      children: [
+                        ElevatedButton(
+                          onPressed: () async {
+                            bool? confirmDelete = await showDialog(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: Text("Confirm Delete"),
+                                  content: Text("Are you sure you want to delete this?"),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(false),
+                                      child: Text("Cancel"),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(true),
+                                      child: Text("Delete", style: TextStyle(color: Colors.red)),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                            if (confirmDelete == true) {
+                              _archiveQuestion();
+                            }
+                          },
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Icon(
+                                CupertinoIcons.delete,
+                                color: Color.fromARGB(255, 0, 0, 0),
+                                size: 15,
+                              ),
+                              SizedBox(width: 2),
+                              Text(
+                                "Delete",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 15, 
+                                  color: Color.fromARGB(255, 144, 0, 0),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: 10,),
+                        ElevatedButton(
+                          onPressed: () => setState(() {
+                            _isEditingQuestion = true;
+                          }),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Icon(
+                                LucideIcons.edit,
+                                color: const Color.fromARGB(255, 0, 0, 0),
+                                size: 15,
+                              ),
+                              SizedBox(width: 2),
+                              Text(
+                                "Edit",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 15, 
+                                  color: const Color.fromARGB(255, 0, 0, 0)
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+              SizedBox(height: 10),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 70),
+                height: 300,
+                child: questionCard(_questions,_isAddingQuestion,_isEditingQuestion,_selectedQuestion,_questionController)
+              ),
+              SizedBox(height: 10,),
+              _isAddingQuestion || _isEditingQuestion ?
+              SizedBox(
+                width: 150,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    bool? confirmAdd = await showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: _isAddingQuestion? Text("Adding Question") :Text("Editing Question "+_selectedQuestion.toString()+ "?"),
+                          content: Text("Are you sure you want to save this?"),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: Text("No"),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: Text("Yes", style: TextStyle(color: Colors.red)),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                    if (confirmAdd == true) {
+                      _isAddingQuestion? _addQuestion() : _editQuestion();
+                      _fetchDepartments();
+                      
+                    }
+                  },
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        LucideIcons.save,
+                        color: const Color.fromARGB(255, 0, 0, 0),
+                        size: 15,
+                      ),
+                      SizedBox(width: 2),
+                      Text(
+                        "Save",
+                        style: GoogleFonts.poppins(
+                          fontSize: 15, 
+                          color: const Color.fromARGB(255, 0, 0, 0)
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              )
+              :
+              SizedBox(
+                height: 40,
+                child: SizedBox(
+                  width: 70,
+                  child: 
+                  ElevatedButton(
+                    onPressed: () => setState(() {
+                      _isAddingQuestion = true;
+                    }),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(15))
+                      ),
+                    ),
+                    child: Center(
+                      child: Icon(LucideIcons.plus, size: 20,),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 10,),
+              SizedBox(
+                width: double.infinity,
+                height: 480,
+                child: GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 1.5,
+                  ),
+                  itemCount: _questions.length,
+                  itemBuilder: (context, index) {
+                    return _listCard("question",index);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
   Widget _questionCRUDDesktop() {
     return  Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -1651,10 +1882,10 @@ class _SettingsPageState extends State<SettingsPage> {
                   flex: 3,
                   child: Column(
                     children: [                      
-                      _selectedDepartment != 0 
-                        ? _questionCard() 
-                        : _questionCard(),
-                      _isAddingDepartment || _isEditingDepartment?
+                      _selectedQuestion != 0 
+                        ? questionCard(_questions,_isAddingQuestion,_isEditingQuestion,_selectedQuestion,_questionController)
+                        : questionCard(_questions,_isAddingQuestion,_isEditingQuestion,_selectedQuestion,_questionController),
+                      _isAddingQuestion || _isEditingQuestion ?
                       SizedBox(
                         width: 150,
                         height: 50,
@@ -1664,7 +1895,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               context: context,
                               builder: (BuildContext context) {
                                 return AlertDialog(
-                                  title: _isAddingDepartment? Text("Adding Department") :Text("Editing "+_departments[_selectedDepartment]["button_name"]+ " Department"),
+                                  title: _isAddingQuestion? Text("Adding Question") :Text("Editing Question "+_selectedQuestion.toString()),
                                   content: Text("Are you sure you want to save this?"),
                                   actions: [
                                     TextButton(
@@ -1680,8 +1911,8 @@ class _SettingsPageState extends State<SettingsPage> {
                               },
                             );
                             if (confirmAdd == true) {
-                              _isAddingDepartment? _addDepartment() : _editDepartment();
-                              _fetchDepartments();
+                              _isAddingQuestion? _addQuestion() : _editQuestion();
+                              _fetchQuestions();
                             }
                           },
                           child: Row(
@@ -1711,8 +1942,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         height: 60,
                         child: ElevatedButton(
                           onPressed: () => setState(() {
-                             _isAddingDepartment = true;
-                            _newDepartmentName = "";
+                             _isAddingQuestion = true;
                             // _selectedIcon = null;
                           }),
                           style: ElevatedButton.styleFrom(
@@ -1737,174 +1967,54 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
     );
   }
-  Widget _questionListCard(int id) {
-    int questionNo = id + 1; 
+  Widget _listCard(String type, int id) {
+    int departmentID = 0;
+    int questionID = 1;
+    type == "question" ? questionID = id + 1 : departmentID = id;
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: InkWell(
         onTap: () {
-          _isEditingQuestion || _isAddingQuestion ? print("None") :
+          _isEditingQuestion || _isEditingDepartment || _isAddingQuestion || _isAddingDepartment ? print("None") :
           setState(() {
-            _selectedQuestion = questionNo;
+            _selectedQuestion = questionID;
+            _selectedDepartment = departmentID;
+            _fetchDepartments();
             _fetchQuestions();
           });
         },
-        child: Container(
-          padding: EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            border: Border.all(color: Color.fromARGB(91, 0, 0, 0)),
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  "Question $questionNo",
-                  style: GoogleFonts.poppins(
-                    fontSize: 20, 
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                  softWrap: true,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            double screenWidth = constraints.maxWidth;
+            return Container(
+              padding: EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                border: Border.all(color: Color.fromARGB(91, 0, 0, 0)),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      type == "question" ? "Question $questionID" : _departments[departmentID]["button_name"],
+                      style: GoogleFonts.poppins(
+                        fontSize: screenWidth * 0.09, 
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                      softWrap: true,
+                    ),
+                    SizedBox(height: 5),
+                    Container(width: 30, height: 2, color: Color.fromRGBO(111, 5, 6, 1)),
+                  ],
                 ),
-                SizedBox(height: 5),
-                Container(width: 30, height: 2, color: Color.fromRGBO(111, 5, 6, 1)),
-              ],
-            ),
-          ),
-        ),
+              ),
+            );
+          }
+        )
       )
     );
   }
-
-
-  Widget _questionCard() {
-    int num = _questions.length + 1;
-    return 
-    Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Container(
-        padding: EdgeInsets.all(5),
-        decoration: BoxDecoration(
-          border: Border.all(color: Color.fromARGB(91, 0, 0, 0)),
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  double availableWidth = constraints.maxWidth;
-                  return Container(
-                    width: availableWidth,
-                    height: 280,
-                    padding: EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.all(Radius.circular(15)),
-                      color: Colors.white,
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.symmetric(horizontal: availableWidth * 0.05),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _questions.isEmpty ? "Questions 0" :
-                                    _isAddingQuestion? "Question $num" : "Question $_selectedQuestion",
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.justify,
-                                    softWrap: true,
-                                  ),
-                                  Container(width: 30, height: 2, color: Color.fromRGBO(111, 5, 6, 1)),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 10),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: availableWidth - 20,
-                              height: 210,
-                              color: Colors.white,
-                              padding: EdgeInsets.symmetric(horizontal: 30),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  (_isAddingQuestion || _isEditingQuestion)
-                                      ? TextField(
-                                          controller: _questionController,
-                                          decoration: InputDecoration(
-                                            border: OutlineInputBorder(),
-                                            hintText: "Enter question...",
-                                          ),
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                          keyboardType: TextInputType.multiline,
-                                          maxLines: null,
-                                        )
-                                      : Text(
-                                          _questions.isEmpty ? "There is no Question" : _questions[_selectedQuestion - 1]["question"],
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                          softWrap: true,
-                                        ),
-                                  SizedBox(height: 30),
-                                  _questions.isEmpty ? 
-                                  SizedBox(height: 30) :
-                                  RatingBar(
-                                    iconSize: 40,
-                                    allowHalfRating: true,
-                                    filledIcon: Icons.star,
-                                    halfFilledIcon: Icons.star_half,
-                                    emptyIcon: Icons.star_border,
-                                    filledColor: Colors.amber,
-                                    emptyColor: Colors.grey,
-                                    currentRating: _rating,
-                                    onRatingChanged: (rating) {
-                                      setState(() {
-                                        // _rating = rating;
-                                        // print(_rating);
-                                      });
-                                    },
-                                  ),
-                                ],
-                              ),
-                            )
-                          ],
-                        )
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
 }

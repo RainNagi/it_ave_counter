@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:kpi_test/settings/settings.dart';
+import 'package:kpi_test/statistics/statistics.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -18,7 +20,7 @@ void main() async {
 class MyApp extends StatelessWidget {
   final bool isLoggedIn;
 
-  MyApp({required this.isLoggedIn});
+  const MyApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +35,7 @@ class MyApp extends StatelessWidget {
           Breakpoint(start: 1921, end: double.infinity, name: "4K"),
         ],
       ),
-      home: isLoggedIn ? MyHomePage(title: 'Home Page') : LoginPage(),
+      home: isLoggedIn ? MyHomePage(title: "Home Page",) : LoginPage(),
     );
   }
 }

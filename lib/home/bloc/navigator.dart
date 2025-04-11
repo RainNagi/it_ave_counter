@@ -2,9 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../authentication/login.dart';
-import '/statistics.dart';
+import '../../statistics/statistics.dart';
 import '../../settings/settings.dart';
-import '/feedback.dart';
+import '../../feedback/feedback.dart';
 
 void logout(context) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();

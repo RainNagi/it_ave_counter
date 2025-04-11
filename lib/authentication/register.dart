@@ -5,6 +5,8 @@ import 'repository/authentication.dart';
 
 
 class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
+
   @override
   _RegisterScreenState createState() => _RegisterScreenState();
 }
@@ -105,12 +107,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 SizedBox(height: 20),
-                Container(
+                SizedBox(
                   width: 300,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Container(
+                      SizedBox(
                         height: textFieldSize,
                         child: TextField(
                           controller: unameController,
@@ -146,7 +148,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                       SizedBox(height: 10),
-                      Container(
+                      SizedBox(
                         height: textFieldSize,
                         child: TextField(
                           controller: emailController,
@@ -182,7 +184,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                       SizedBox(height: 10),
-                      Container(
+                      SizedBox(
                         height: textFieldSize,
                         child: TextField(
                           controller: passwordController,

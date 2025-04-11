@@ -9,6 +9,8 @@ import 'register.dart';
 
 
 class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
   @override
   _LoginPageState createState() => _LoginPageState();
 }
@@ -99,7 +101,7 @@ class _LoginPageState extends State<LoginPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Container(
+                    SizedBox(
                       height: textFieldSize,
                       child: TextField(
                         controller: emailController,
@@ -124,7 +126,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     SizedBox(height: 10),
-                    Container(
+                    SizedBox(
                       height: textFieldSize,
                       child: TextField(
                         controller: passwordController,

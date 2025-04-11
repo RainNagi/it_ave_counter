@@ -1,21 +1,25 @@
 // ignore_for_file: unused_import, avoid_print, unnecessary_import, deprecated_member_use, avoid_web_libraries_in_flutter, prefer_interpolation_to_compose_strings
 
+import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
+import 'package:responsive_framework/responsive_framework.dart';
 import 'csv_download/csv_download_io.dart' if (dart.library.html) 'csv_download/csv_download_web.dart';
 import 'package:csv/csv.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cupertino_sidebar/cupertino_sidebar.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:file_saver/file_saver.dart';
-import 'home/home.dart';
+import '../home/home.dart';
+import 'table_source/tables.dart';
 
 class StatisticsPage extends StatefulWidget {
   const StatisticsPage({super.key});
@@ -25,6 +29,7 @@ class StatisticsPage extends StatefulWidget {
 }
 
 class _StatisticsPageState extends State<StatisticsPage> {
+  
   String ip = dotenv.get('IP_ADDRESS');
   
 
@@ -37,6 +42,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
     _fetchDepartments();
     fetchStatistics();
     fetchVisitors();
+    fetchAverageFeedback();
   }
 
   late List<Widget> _pages;
@@ -44,15 +50,25 @@ class _StatisticsPageState extends State<StatisticsPage> {
   
   final TextEditingController _startingDateController = TextEditingController();
   final TextEditingController _endingDateController = TextEditingController();
+  
 
   List<dynamic> _visitors = [];
   List<dynamic> _departmentVisitors = [];
+  List<dynamic> _feedbacks = [];
+  final List<dynamic> tables = [
+    {"table_id" : 1, "table_name" : "Department Visitors", "csv_title" : "visitor_data"},
+    {"table_id" : 2, "table_name" : "Department Visitor Count", "csv_title" : "department_visitor_data"},
+    {"table_id" : 3, "table_name" : "Average Feedback Per Department", "csv_title" : "department_average_feedback"}
+  ];
   Map<String, int> statistics = {};
   String selectedYear = DateTime.now().year.toString();
   // String selectedMonthValue = "01"; 
   // String selectedMonthName = "January"; 
-  int selectedDepartment = 1; 
-  double barWidth = 30; 
+  int selectedDepartment = 0; 
+  int selectedDepartmentFeedback = 0;
+  int selectedTable = 0;
+  int rowsPerPage = 20;
+  double barWidth = 12; 
   int page = 1;
 
   // List<String> years = [];
@@ -60,6 +76,8 @@ class _StatisticsPageState extends State<StatisticsPage> {
   Map<String, int> weekdayStatistics = {};
   List<Map<String, dynamic>> departments = [];
   final List<String> weekdaysOrder = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+
 
   Future<void> fetchStatistics() async {
     final url = Uri.parse('http://$ip/kpi_itave/statistics1.php');
@@ -70,7 +88,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
           'ending_date': _endingDateController.text,
         }
       );
-
       if (response.statusCode == 200) {
         try {
           List<dynamic> data = jsonDecode(response.body);
@@ -93,6 +110,18 @@ class _StatisticsPageState extends State<StatisticsPage> {
     return _departmentVisitors.fold(0, (sum, data) => sum + int.parse(data['counter_count'].toString()));
   }
 
+  double _getTotalAverageFeedback(int department_id) {
+    double totalFeedback = 0.0;
+    int count = 0;
+
+    for (var data in _feedbacks) {
+      if (data['department_id'] == department_id) {
+        totalFeedback += double.parse(data['average_feedback'].toString());
+        count++;
+      }
+    }
+    return count.round() > 0 ? ((totalFeedback / count) * 100).round() / 100.0 : 0.0;
+  }
   double _getAverageFeedback() {
     double totalFeedback = 0.0;
     int count = 0;
@@ -103,12 +132,12 @@ class _StatisticsPageState extends State<StatisticsPage> {
         count++;
       }
     }
-    return count.round() > 0 ? totalFeedback / count : 0.0;
+    return count.round() > 0 ? ((totalFeedback / count) * 100).round() / 100.0 : 0.0;
   }
 
   Future<void> fetchWeekdayStatistics() async {
-    final url = Uri.parse('http://$ip/kpi_itave/statistics1.php?action=getWeekdays&department=$selectedDepartment');
-
+    final buttonId = departments[selectedDepartment]["button_id"];
+    final url = Uri.parse('http://$ip/kpi_itave/statistics1.php?action=getWeekdays&department=$buttonId');
     try {
       final response = await http.post(
         url,
@@ -130,25 +159,36 @@ class _StatisticsPageState extends State<StatisticsPage> {
       print("Error fetching weekday statistics: $e");
     }
   }
-  Future<void> generateCSV(type) {
+  
+
+  Future<void> generateCSV(BuildContext context, String type) {
     List<List<String>> rows = [];
-    if (type == "visitor_count") {
+    if (type == "visitor_data") {
       rows.add(["Visitor", "Department Visit", "TimeStamp"]);
-      _visitors.forEach((visitor) {
+      for (var visitor in _visitors) {
         rows.add([visitor['id'].toString(), visitor['button_name'], visitor['timestamp']]);
-      });
+      }
       rows.add(["","Total Visitors: ",_getTotalVisitorCount().toString()]);
-    } else if (type == "total_visitors") {
+    } else if (type == "department_visitor_data") {
       rows.add(["Department ID", "Department", "Visitor Count", "Average Feedback"]); 
-      _departmentVisitors.forEach((department) {
+      for (var department in _departmentVisitors) {
         rows.add([department['button_id'].toString(), department['button_name'], department['counter_count'].toString(), department['average_feedback']?.toString() ?? 'N/A']);
-      });
+      }
       rows.add(["","Total Visitors: ",_getTotalVisitorCount().toString()]);
+    } else if (type == "department_average_feedback"){
+      rows.add(["Question ID", "Department", "Number of Feedback", "Average Feedback"]);
+      for (var feedback in _feedbacks) {
+        rows.add(["Question "+feedback['question_id'].toString(), feedback['button_name'], feedback['feedback_count'].toString(), feedback['average_feedback']?.toString() ?? 'N/A']);
+        if (feedback["question_id"] == 8){
+          rows.add(["","","Total Average: ",_getTotalAverageFeedback(feedback["department_id"]).toString()]);
+          rows.add(["","","",""]);
+        }
+      }
     }
 
     String csvData = const ListToCsvConverter().convert(rows);
 
-    return downloadCSV(context, csvData);
+    return downloadCSV(context, csvData, type);
   }
 
   Future<void> _selectDate(BuildContext context, controller) async {
@@ -167,6 +207,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
           fetchStatistics();
           fetchWeekdayStatistics();
           fetchVisitors();
+          fetchAverageFeedback();
         } 
       });
     }
@@ -190,6 +231,32 @@ class _StatisticsPageState extends State<StatisticsPage> {
         });
       } else {
         print("Failed to fetch department: ${response.statusCode}");
+      }
+      
+    } catch (e) {
+      print("Error fetching department visitor data: $e");
+    }
+  }
+
+  Future<void> fetchAverageFeedback() async {
+    final url = Uri.parse('http://$ip/kpi_itave/statistics.php?action=getAverageFeedback');
+    try {
+      final response = await http.post(
+        url,
+        body: {
+          'starting_date': _startingDateController.text,
+          'ending_date': _endingDateController.text,
+        }
+      );
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = jsonDecode(response.body);
+        setState(() {
+          _feedbacks = List<Map<String, dynamic>>.from(data);
+          _reportTable();
+        });
+      } else {
+        print("Failed to fetch average feedback: ${response.statusCode}");
       }
       
     } catch (e) {
@@ -291,7 +358,11 @@ class _StatisticsPageState extends State<StatisticsPage> {
 
   @override
   Widget build(BuildContext context) {
+    var screenType = ResponsiveBreakpoints.of(context).breakpoint.name;
+    double buttonFont = screenType == MOBILE ? 9 : 16;
+    double textFieldSize = screenType == MOBILE ? 35 : 50;
     List<Widget> getPages() {
+      fetchWeekdayStatistics(); 
       return [
          _reportTable(),
          _visualReport()
@@ -333,7 +404,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                     child: Text(
                       "Select Date: ",
                       style: GoogleFonts.poppins(
-                        fontSize: 16, color: Colors.black54,
+                        fontSize: buttonFont, color: Colors.black54,
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.start,
@@ -342,93 +413,87 @@ class _StatisticsPageState extends State<StatisticsPage> {
                   SizedBox(height: 10,),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal:  16.0),
-                    width: 1000,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                    width: double.infinity,
+                    child: ResponsiveRowColumn(
+                      rowMainAxisAlignment: MainAxisAlignment.center,
+                      rowCrossAxisAlignment: CrossAxisAlignment.center,
+                      columnMainAxisAlignment: MainAxisAlignment.center,
+                      columnCrossAxisAlignment: CrossAxisAlignment.center,
+                      layout: ResponsiveBreakpoints.of(context).smallerThan(TABLET)
+                        ? ResponsiveRowColumnType.COLUMN
+                        : ResponsiveRowColumnType.ROW,
                       children: [
-                        SizedBox(
-                          width: 250,
-                          child: TextField(
-                            controller: _startingDateController,
-                            decoration: InputDecoration(
-                              labelText: "Starting Date",
-                              hintText: "YYYY-MM-DD",
-                              border: OutlineInputBorder(),
-                              suffixIcon: IconButton(
-                                onPressed: () => _selectDate(context, _startingDateController), 
-                                icon: Icon(Icons.calendar_month)
+                        ResponsiveRowColumnItem(
+                          child: SizedBox(
+                            width: 250,
+                            height: textFieldSize,
+                            child: TextField(
+                              style: GoogleFonts.poppins(fontSize: buttonFont),
+                              controller: _startingDateController,
+                              decoration: InputDecoration(
+                                labelText: "Starting Date",
+                                labelStyle: TextStyle(color: Colors.grey, fontSize:  buttonFont),
+                                hintText: "YYYY-MM-DD",
+                                border: OutlineInputBorder(),
+                                suffixIcon: IconButton(
+                                  onPressed: () => _selectDate(context, _startingDateController), 
+                                  icon: Icon(Icons.calendar_month)
+                                ),
                               ),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                LengthLimitingTextInputFormatter(10), 
+                                FilteringTextInputFormatter.digitsOnly, 
+                                DateInputFormatter(), 
+                              ],
+                              onChanged: (value) {
+                                _getDepartmentVisitors();
+                                fetchStatistics();
+                                fetchWeekdayStatistics();
+                                fetchVisitors();
+                              },
                             ),
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              LengthLimitingTextInputFormatter(10), 
-                              FilteringTextInputFormatter.digitsOnly, 
-                              DateInputFormatter(), 
-                            ],
-                            onChanged: (value) {
-                              _getDepartmentVisitors();
-                              fetchStatistics();
-                              fetchWeekdayStatistics();
-                              fetchVisitors();
-                            },
                           ),
                         ),
-                        SizedBox(width: 10,),
-                        SizedBox(
-                          width: 250,
-                          child: TextField(
-                            controller: _endingDateController,
-                            decoration: InputDecoration(
-                              labelText: "Ending Date",
-                              hintText: "YYYY-MM-DD",
-                              border: OutlineInputBorder(),
-                              suffixIcon: IconButton(
-                                onPressed: () => _selectDate(context, _endingDateController), 
-                                icon: Icon(Icons.calendar_month)
-                              ),
-                            ),
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              LengthLimitingTextInputFormatter(10), 
-                              FilteringTextInputFormatter.digitsOnly, 
-                              DateInputFormatter(), 
-                            ],
-                            onChanged: (value) {
-                              _getDepartmentVisitors();
-                              fetchStatistics();
-                              fetchWeekdayStatistics();
-                              fetchVisitors();
-                            },
-                          ),
+                        ResponsiveRowColumnItem(
+                          child: SizedBox(width: 10, height: 10,),
                         ),
-                        // SizedBox(width: 10,),
-                        // InkWell(
-                        //   onTap: (){
-                        //     _getDepartmentVisitors();
-                        //     fetchStatistics();
-                        //     fetchWeekdayStatistics();
-                        //     fetchVisitors();
-                        //   }, 
-                        //   child: Container(
-                        //     height: 40,
-                        //     width: 40,
-                        //     decoration: BoxDecoration(
-                        //       border: Border.all(color: Colors.black),
-                        //       borderRadius: BorderRadius.all(Radius.circular(8))
-                        //     ),
-                        //     child: Row(
-                        //       mainAxisAlignment: MainAxisAlignment.center,
-                        //       children: [
-                        //         Icon(Icons.search)
-                        //       ]
-                        //     )
-                        //   )
-                        // ),
+                        ResponsiveRowColumnItem(
+                          child: SizedBox(
+                            width: 250,
+                            height: textFieldSize,
+                            child: TextField(
+                              style: GoogleFonts.poppins(fontSize: buttonFont),
+                              controller: _endingDateController,
+                              decoration: InputDecoration(
+                                labelText: "Ending Date",
+                                labelStyle: TextStyle(color: Colors.grey, fontSize:  buttonFont),
+                                hintText: "YYYY-MM-DD",
+                                border: OutlineInputBorder(),
+                                suffixIcon: IconButton(
+                                  onPressed: () => _selectDate(context, _endingDateController), 
+                                  icon: Icon(Icons.calendar_month)
+                                ),
+                              ),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                LengthLimitingTextInputFormatter(10), 
+                                FilteringTextInputFormatter.digitsOnly, 
+                                DateInputFormatter(), 
+                              ],
+                              onChanged: (value) {
+                                _getDepartmentVisitors();
+                                fetchStatistics();
+                                fetchWeekdayStatistics();
+                                fetchVisitors();
+                              },
+                            ),
+                          ),
+                        )
                       ],
                     )
                   ),
-                  SizedBox(height: 20,),
+                  SizedBox(height: 10,),
                   Stack(
                     children: [
                       Align(
@@ -445,9 +510,9 @@ class _StatisticsPageState extends State<StatisticsPage> {
                                         _selectedIndex = value;
                                       });
                                   },
-                                  tabs: const [
-                                      CupertinoFloatingTab(child: Text('Reports')),
-                                      CupertinoFloatingTab(child: Text('Visual Reports')),
+                                  tabs: [
+                                      CupertinoFloatingTab(child: Text('Reports', style: GoogleFonts.poppins(color: Colors.black, fontSize: buttonFont, fontWeight: FontWeight.bold),softWrap: true,)),
+                                      CupertinoFloatingTab(child: Text('Visual Reports', style: GoogleFonts.poppins(color: Colors.black, fontSize: buttonFont, fontWeight: FontWeight.bold),softWrap: true,)),
                                   ],
                                 );
                               },
@@ -457,21 +522,22 @@ class _StatisticsPageState extends State<StatisticsPage> {
                       )
                     ],
                   ),
-                  SizedBox(height: 30,),
+                  SizedBox(height: 10,),
                   Center(
                     child: _pages.elementAt(_selectedIndex), 
                   ),
                 ]
               ),
             ),
-            
           ],
         ),
       ),
     );
   }
   Widget _reportTable() {
-    return Container(
+    var screenType = ResponsiveBreakpoints.of(context).breakpoint.name;
+    double font = screenType == MOBILE? 9: 16;
+    return SizedBox(
       width: double.infinity,
       child: Column(
         children: [
@@ -483,17 +549,54 @@ class _StatisticsPageState extends State<StatisticsPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text( 
-                  "Department Visitors", 
-                  style: GoogleFonts.poppins(
-                    fontSize: 16, color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DropdownButton<String>(
+                      value: tables[selectedTable]["table_name"],
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            selectedTable = tables.indexWhere((table) => table["table_name"] == newValue);
+                            rowsPerPage = 20; 
+
+                            _reportTable();
+                          });
+                        }
+                      },
+                      items: tables.map((table) {
+                        return DropdownMenuItem(
+                          value: table["table_name"].toString(),
+                          child: Text(table["table_name"].toString(), style: GoogleFonts.poppins(color: Colors.black, fontSize: font, fontWeight: FontWeight.bold),softWrap: true,),
+                        );
+                      }).toList(),
+                    ),
+                    selectedTable == 2 ?
+                      departments.isEmpty ?
+                      Text("Empty") :
+                      DropdownButton<String>(
+                        value: departments[selectedDepartmentFeedback]["button_name"],
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              selectedDepartmentFeedback = departments.indexWhere((dept) => dept["button_name"] == newValue);
+                              // fetchWeekdayStatistics();
+                            });
+                          }
+                        },
+                        items: departments.map((dept) {
+                          return DropdownMenuItem(
+                            value: dept["button_name"].toString(),
+                            child: Text(dept["button_name"].toString(), style: GoogleFonts.poppins(color: Colors.black, fontSize: font, fontWeight: FontWeight.bold),softWrap: true,),
+                          );
+                        }).toList(),
+                      ): SizedBox.shrink(),
+                  ],
                 ),
                 ElevatedButton(
-                  onPressed: () {generateCSV("visitor_count");},
-                  child: Text("Download CSV", style: TextStyle(fontSize: 16)),
+                  onPressed: () {generateCSV(context, tables[selectedTable]["csv_title"]);},
+                  child: Text("Download CSV", style: TextStyle(fontSize: font)),
                 ),
               ],
             ),
@@ -507,112 +610,47 @@ class _StatisticsPageState extends State<StatisticsPage> {
               borderRadius: BorderRadius.all(Radius.circular(8)),
               color: Colors.white
             ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.vertical,
-              child: DataTable(
-                headingTextStyle: GoogleFonts.poppins(
-                  textStyle: TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
+            child: PaginatedDataTable2(
+              key: ValueKey(selectedTable),
+              headingTextStyle: GoogleFonts.poppins(
+                textStyle: TextStyle(
+                  fontSize: font,
+                  fontWeight: FontWeight.bold,
                 ),
-                columns: [
-                  DataColumn(label: MouseRegion(child: Text("Visitor ID")), headingRowAlignment: MainAxisAlignment.center),
-                  DataColumn(label: Text("Department Visit"), headingRowAlignment: MainAxisAlignment.center),
-                  DataColumn(label: Text("TimeStamp"), headingRowAlignment: MainAxisAlignment.center),
-                ],
-
-                rows: [
-                  ..._visitors.skip((page-1)*30).take(30).map((data) {
-                  return DataRow(cells: [
-                    DataCell(Center(child: Text(data['id'].toString()))),
-                    DataCell(Center(child: Text(data['button_name'].toString()))),
-                    DataCell(Center(child: Text(data['timestamp'].toString()))),
-                  ]);
-                  }),
-
-                  DataRow(cells: [
-                    DataCell(Center(child: Text(""))), 
-                    DataCell(Center(child: Text("Total Visitors", style: TextStyle(fontWeight: FontWeight.bold,)))), 
-                    DataCell(Center(child: Text(_getTotalVisitorCount().toString(), style: TextStyle(fontWeight: FontWeight.bold,)))), 
-                  ]),
-                  DataRow(cells: [
-                    DataCell(Center(child: page == 1? Text("") : ElevatedButton(onPressed: () {page -= 1;  fetchVisitors();}, child: Text("<")))),
-                    DataCell(Center(child: Text("$page"))),  
-                    DataCell(Center(child: _visitors.skip((page-1)*30).take(30).length < 30? Text("") : ElevatedButton(onPressed: () {page += 1;  fetchVisitors(); }, child: Text(">")))),  
-                  ]),
-                ]
               ),
+              rowsPerPage: rowsPerPage,
+              availableRowsPerPage: const [5, 10, 15, 20],
+              showFirstLastButtons: true,
+              onRowsPerPageChanged: (value) {
+                setState(() {
+                  print(value);
+                  rowsPerPage = value!;
+                });
+              },
+              columns: selectedTable == 0  ? [
+                DataColumn2(label: MouseRegion(child: Text("Visitor ID")), headingRowAlignment: MainAxisAlignment.center),
+                DataColumn2(label: Text("Department Visit"), headingRowAlignment: MainAxisAlignment.center),
+                DataColumn2(label: Text("TimeStamp"), headingRowAlignment: MainAxisAlignment.center),
+              ] : selectedTable == 1 ? [
+                DataColumn2(label: Text("Department ID"), headingRowAlignment: MainAxisAlignment.center),
+                DataColumn2(label: Text("Department"), headingRowAlignment: MainAxisAlignment.center),
+                DataColumn2(label: Text("Visitor Count"), headingRowAlignment: MainAxisAlignment.center),
+                DataColumn2(label: Text("Average Feedback"), headingRowAlignment: MainAxisAlignment.center),
+              ] : selectedTable == 2 ? [
+                DataColumn2(label: Text("Button Name"), headingRowAlignment: MainAxisAlignment.center),
+                DataColumn2(label: Text("Question ID"), headingRowAlignment: MainAxisAlignment.center),
+                DataColumn2(label: Text("Visitor Count"), headingRowAlignment: MainAxisAlignment.center),
+                DataColumn2(label: Text("Average Feedback"), headingRowAlignment: MainAxisAlignment.center),
+              ] : [],
+              source: selectedTable == 0
+                ? VisitorDataSource(_visitors, font)
+                : selectedTable == 1
+                    ? DepartmentVisitorDataSource(_departmentVisitors, font)
+                    : FeedbackDataSource(_feedbacks, font, selectedDepartmentFeedback, departments),
+              
             ),
-          ),
-          SizedBox(height: 30,),
-          Padding(
-            padding: EdgeInsets.only(
-              left: 20,
-              right: 20
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text( 
-                  "Department Visitor Count", 
-                  style: GoogleFonts.poppins(
-                    fontSize: 16, color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                ElevatedButton(
-                  onPressed: () {generateCSV("total_visitors");},
-                  child: Text("Download CSV", style: TextStyle(fontSize: 16)),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 20,),
-          Container(
-            width: double.infinity,
-            height: 530,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.black),
-              borderRadius: BorderRadius.all(Radius.circular(8)),
-              color: Colors.white
-            ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.vertical,
-              child: DataTable(
-                headingTextStyle: GoogleFonts.poppins(
-                  textStyle: TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                columns: [
-                  DataColumn(label: Text("Department ID"), headingRowAlignment: MainAxisAlignment.center),
-                  DataColumn(label: Text("Department"), headingRowAlignment: MainAxisAlignment.center),
-                  DataColumn(label: Text("Visitor Count"), headingRowAlignment: MainAxisAlignment.center),
-                  DataColumn(label: Text("Average Feedback"), headingRowAlignment: MainAxisAlignment.center),
-                ],
 
-                rows: [
-                  ..._departmentVisitors.map((data) {
-                  return DataRow(cells: [
-                    DataCell(Center(child: Text(data['button_id'].toString()))),
-                    DataCell(Center(child: Text(data['button_name'].toString()))),
-                    DataCell(Center(child: Text(data['counter_count'].toString()))),
-                    DataCell(Center(child: Text(data['average_feedback']?.toString() ?? 'N/A'))),
-                  ]);
-                  }).toList(),
-
-                  DataRow(cells: [
-                    DataCell(Center(child: Text(""))), 
-                    DataCell(Center(child: Text("Totals", style: TextStyle(fontWeight: FontWeight.bold,)))), 
-                    DataCell(Center(child: Text(_getTotalVisitorCount().toString(), style: TextStyle(fontWeight: FontWeight.bold,)))), 
-                    DataCell(Center(child: Text(_getAverageFeedback().toString(), style: TextStyle(fontWeight: FontWeight.bold,)))),
-                  ]),
-                ]
-              ),
-            ),
           ),
-          
         ]
       )
     );
@@ -620,8 +658,11 @@ class _StatisticsPageState extends State<StatisticsPage> {
   }
 
   Widget _visualReport(){
+    var screenType = ResponsiveBreakpoints.of(context).breakpoint.name;
     double screenWidth = MediaQuery.of(context).size.width;
     double containerWidth = screenWidth * 0.9;
+    double titleFont = screenType == MOBILE? 12: 22;
+    double font = screenType == MOBILE? 8: 12;
     return Container(
       width: containerWidth,
       padding: EdgeInsets.all(16),
@@ -633,11 +674,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Dropdowns Row
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Text("Visitor Counts", style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text("Visitor Counts", style: GoogleFonts.poppins(fontSize: titleFont, fontWeight: FontWeight.bold)),
               SizedBox(width: 15),
             ],
           ),
@@ -661,6 +701,9 @@ class _StatisticsPageState extends State<StatisticsPage> {
                       topTitles: AxisTitles(
                         sideTitles: SideTitles(showTitles: false),
                       ),
+                      rightTitles: AxisTitles(
+                        sideTitles: SideTitles(showTitles: false,reservedSize: font)
+                      ),
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
@@ -673,7 +716,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                                 angle: -0.3,
                                 child: Text(
                                   departments[index]["button_name"], 
-                                  style: GoogleFonts.poppins(fontSize: 12),
+                                  style: GoogleFonts.poppins(fontSize: font),
                                 ),
                               ),
                             );
@@ -690,72 +733,77 @@ class _StatisticsPageState extends State<StatisticsPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Text("Weekday Statistics", style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text("Weekday Statistics", style: GoogleFonts.poppins(fontSize: titleFont, fontWeight: FontWeight.bold)),
               SizedBox(width: 10),
               Flexible(
                 child:
                 departments.isEmpty ?
-                Text("Empty") :
-                DropdownButton<String>(
-                  value: departments[selectedDepartment]["button_name"],
-                  onChanged: (String? newValue) {
-                    if (newValue != null) {
-                      setState(() {
-                        selectedDepartment = departments.indexWhere((dept) => dept["button_name"] == newValue);
-                        fetchWeekdayStatistics();
-                      });
-                    }
-                  },
-                  items: departments.map((dept) {
-                    return DropdownMenuItem(
-                      value: dept["button_name"].toString(),
-                      child: Text(dept["button_name"].toString()),
-                    );
-                  }).toList(),
-                ),
+                  Text("Empty") :
+                  DropdownButton<String>(
+                    value: departments[selectedDepartment]["button_name"],
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          selectedDepartment = departments.indexWhere((dept) => dept["button_name"] == newValue);
+                          fetchWeekdayStatistics();
+                        });
+                      }
+                    },
+                    items: departments.map((dept) {
+                      return DropdownMenuItem(
+                        value: dept["button_name"].toString(),
+                        child: Text(dept["button_name"].toString(), style: GoogleFonts.poppins(color: Colors.black, fontSize: font, fontWeight: FontWeight.bold),softWrap: true,),
+                      );
+                    }).toList(),
+                  )
               ),
+              
             ],
           ),
 
           SizedBox(
             height: 300,
             child: weekdayStatistics.isEmpty
-                ? Center(child: Text("No data available"))
-                : BarChart(
-                    BarChartData(
-                      gridData: FlGridData(
-                        drawHorizontalLine: true,
-                        drawVerticalLine: false  
-                      ),
-                      maxY: (weekdayStatistics.values.isNotEmpty
-                              ? ((weekdayStatistics.values.reduce((a, b) => a > b ? a : b) + 10) / 10).ceil() * 10
-                              : 10)
-                          .toDouble(),
-                      barGroups: getWeekdayBarChartData(),
-                      titlesData: FlTitlesData(
-                        topTitles: AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            getTitlesWidget: (double value, TitleMeta meta) {
-                              return Transform.rotate(
-                                angle: -0.4,
-                                child: Text(weekdaysOrder[value.toInt()], style: GoogleFonts.poppins(fontSize: 12)),
-                              );
-                            },
-                          ),
-                        ),
-                        
+            ? Center(child: Text("No data available"))
+            : BarChart(
+                BarChartData(
+                  gridData: FlGridData(
+                    drawHorizontalLine: true,
+                    drawVerticalLine: false  
+                  ),
+                  maxY: (weekdayStatistics.values.isNotEmpty
+                          ? ((weekdayStatistics.values.reduce((a, b) => a > b ? a : b) + 10) / 10).ceil() * 10
+                          : 10)
+                      .toDouble(),
+                  barGroups: getWeekdayBarChartData(),
+                  titlesData: FlTitlesData(
+                    topTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false,reservedSize: font),
+                    ),
+                    rightTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false,reservedSize: font)
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (double value, TitleMeta meta) {
+                          return Transform.rotate(
+                            angle: -0.4,
+                            child: Text(weekdaysOrder[value.toInt()], style: GoogleFonts.poppins(fontSize:font)),
+                          );
+                        },
                       ),
                     ),
+                    
                   ),
+                ),
+              ),
           ),
+          // Text("Weekday Statistics", style: GoogleFonts.poppins(fontSize: titleFont, fontWeight: FontWeight.bold)),
+
         ],
       ),
     );
-
   }
 }
 
@@ -778,11 +826,9 @@ class DateInputFormatter extends TextInputFormatter {
       formatted = digitsOnly;
     }
 
-    // Remove trailing '-' if it exists
     if (formatted.endsWith('-')) {
       formatted = formatted.substring(0, formatted.length - 1);
     }
-
     return TextEditingValue(
       text: formatted,
       selection: TextSelection.collapsed(offset: formatted.length),

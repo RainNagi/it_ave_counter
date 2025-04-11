@@ -7,7 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:rating_and_feedback_collector/rating_and_feedback_collector.dart';
 import 'dart:convert';
-import 'home/home.dart';
+import '../home/home.dart';
 
 
 class CustomerFeedback extends StatefulWidget {
@@ -41,7 +41,6 @@ class _FeedbackPageState extends State<CustomerFeedback> {
 
       if (response.statusCode == 200) {
         List<dynamic> data = jsonDecode(response.body);
-
         setState(() {
           _departments.clear(); 
           _departments = List<Map<String, dynamic>>.from(data);
@@ -168,10 +167,6 @@ class _FeedbackPageState extends State<CustomerFeedback> {
       },
     );
   }
-
-
-
-
   @override
   void dispose() {
     super.dispose();
@@ -208,11 +203,6 @@ class _FeedbackPageState extends State<CustomerFeedback> {
           height: containerHeight,
           // color: Colors.red,
           padding: EdgeInsets.all(0),
-          // decoration: BoxDecoration(
-          //   color: Colors.white,
-          //   borderRadius: BorderRadius.circular(20),
-          //   boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, spreadRadius: 2)],
-          // ),
           child: Column(
             children: [
               Expanded(
@@ -228,7 +218,7 @@ class _FeedbackPageState extends State<CustomerFeedback> {
                   : GridView.builder(
                       padding: const EdgeInsets.all(10),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 1, 
+                        crossAxisCount: screenWidth > 800 ? 2 : 1, 
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
                         childAspectRatio: screenWidth > 800 ? 2.1: 1.5,
@@ -272,226 +262,223 @@ class _FeedbackPageState extends State<CustomerFeedback> {
       ),
     );
   }
+  Widget _buildCustomerNameCard() {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double fontSize = screenWidth < 600 ? 14 : 18;  
+    double padding = screenWidth < 600 ? 12 : 15;  
+    double inputHeight = screenWidth < 600 ? 45 : 50;
 
-  Widget _buildQuestionCard(int index, String question) {
-    return 
-    Card(
+    return Card(
+      elevation: 5,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: Color.fromARGB(91, 0, 0, 0)),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        padding: EdgeInsets.all(padding),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              "Customer Name",
+              style: GoogleFonts.poppins(
+                fontSize: fontSize,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            SizedBox(height: 5),
+            Container(
+              width: screenWidth * 0.8,  // Make the text field responsive
+              height: inputHeight,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey.shade400),
+                color: Colors.white,
+              ),
+              child: TextField(
+                controller: CustomerNameController,
+                decoration: InputDecoration(
+                  contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                  border: InputBorder.none,
+                  hintText: "Enter Name...",
+                  hintStyle: GoogleFonts.poppins(fontSize: fontSize, color: Colors.grey),
+                ),
+                style: GoogleFonts.poppins(fontSize: fontSize),
+              ),
+            ),
+            SizedBox(height: 30),
+            Text(
+              "Department",
+              style: GoogleFonts.poppins(
+                fontSize: fontSize,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            SizedBox(height: 5),
+            Container(
+              width: screenWidth * 0.8, 
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey.shade400),
+                color: Colors.white,
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<int>(
+                  value: _selectedDepartment,
+                  hint: Text(
+                    "Select Department",
+                    style: GoogleFonts.poppins(fontSize: fontSize, color: Colors.grey),
+                  ),
+                  isExpanded: true,
+                  icon: Icon(Icons.arrow_drop_down, color: Colors.black54),
+                  items: _departments.map((dept) {
+                    return DropdownMenuItem<int>(
+                      value: dept['button_id'],
+                      child: Text(dept['button_name'], style: GoogleFonts.poppins(fontSize: fontSize)),
+                    );
+                  }).toList(),
+                  onChanged: (int? value) {
+                    setState(() {
+                      _selectedDepartment = value!;
+                    });
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  
+  Widget _buildQuestionCard(int index, String question) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Container(
+        height: 350,
+        width: double.infinity,
         padding: EdgeInsets.all(5),
         decoration: BoxDecoration(
           border: Border.all(color: Color.fromARGB(91, 0, 0, 0)),
           borderRadius: BorderRadius.circular(15),
         ),
-        child: Center(
+        child:GestureDetector(
+          onTapDown: (TapDownDetails details) {
+            setState(() {
+              _ratings[index] = _ratings[index] == 5.0 ? 0.0 : _ratings[index]! + 0.5;
+            });
+          },
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  double availableWidth = constraints.maxWidth;
-                  return Container(
-                    width: availableWidth -10,
-                    height: 340,
-                    padding: EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.all(Radius.circular(15)),
-                      color: Colors.white,
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(15),
+                      topRight: Radius.circular(15),
                     ),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: availableWidth - 30,
-                              padding: EdgeInsets.only(
-                                top: availableWidth * 0.05,
-                                left: availableWidth * 0.05,
-                                right: availableWidth * 0.05
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    color: Colors.white,
+                  ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      double screenWidth = constraints.maxWidth;
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Column(
                                 children: [
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "Question $index",
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        textAlign: TextAlign.justify,
-                                        softWrap: true,
-                                      ),
-                                      Container(width: 30, height: 2, color: Color.fromRGBO(111, 5, 6, 1)),
-                                    ],
-                                  ),
                                   Text(
-                                    "${_ratings[index]}/5",
+                                    "Question $index",
                                     style: GoogleFonts.poppins(
-                                      fontSize: 20,
+                                      fontSize: screenWidth * 0.03,
                                       fontWeight: FontWeight.bold,
                                     ),
-                                  )
-                                ],
-                              )
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 10),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            GestureDetector(
-                              
-                              onTapDown: (TapDownDetails details) {
-                                setState(() {
-                                  _ratings[index] = _ratings[index] == 5.0 ? 0.0 : _ratings[index]! + 0.5;
-                                });
-                              },
-                              child: Container(
-                                width: availableWidth - 30,
-                                height: 210,
-                                color: Colors.white,
-                                padding: EdgeInsets.symmetric(horizontal: 30),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      question,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                      softWrap: true,
-                                    ),
-                                    SizedBox(height: 30),
-                                    _questions.isEmpty
-                                        ? SizedBox(height: 30)
-                                        : RatingBar(
-                                            iconSize: 40,
-                                            allowHalfRating: true,
-                                            filledIcon: Icons.star,
-                                            halfFilledIcon: Icons.star_half,
-                                            emptyIcon: Icons.star_border,
-                                            filledColor: Colors.amber,
-                                            emptyColor: Colors.grey,
-                                            currentRating: _ratings[index] ?? 3.0,
-                                            onRatingChanged: (rating) {
-                                              setState(() {
-                                                _ratings[index] = rating;
-                                              });
-                                            },
-                                          ),
-                                  ],
-                                ),
+                                    textAlign: TextAlign.justify,
+                                    softWrap: true,
+                                  ),
+                                  Container(width: 30, height: 2, color: Color.fromRGBO(111, 5, 6, 1)),
+                                ]
                               ),
+                              Text(
+                                "${_ratings[index]}/5",
+                                style: GoogleFonts.poppins(
+                                  fontSize: screenWidth * 0.03,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
+                            ],
+                          ),
+                          Expanded(
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                double availableHeight = constraints.maxHeight; // Get dynamic height
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(height: availableHeight * 0.1),
+                                    Column(
+                                      children: [
+                                        Container(
+                                          width: screenWidth,
+                                          child: Text(
+                                            question,
+                                            style: GoogleFonts.poppins(
+                                              fontSize: screenWidth * 0.028,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                            softWrap: true,
+                                          ),
+                                        ),
+                                        SizedBox(height: 10,),
+                                        RatingBar(
+                                          iconSize: availableHeight * 0.2,
+                                          allowHalfRating: true,
+                                          filledIcon: Icons.star,
+                                          halfFilledIcon: Icons.star_half,
+                                          emptyIcon: Icons.star_border,
+                                          filledColor: Colors.amber,
+                                          emptyColor: Colors.grey,
+                                          currentRating: _ratings[index] ?? 3.0,
+                                          onRatingChanged: (rating) {
+                                            setState(() {
+                                              _ratings[index] = rating;
+                                            });
+                                          },
+                                        )
+                                      ]
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
-                          ],
-                        )
-
-                      ],
-                    ),
-                  );
-                },
-              ),
+                          )
+                        ],
+                      );
+                    }
+                  )
+                ),
+              )
             ],
           ),
         ),
       ),
-    );
-  }
-  Widget _buildCustomerNameCard() {
-    return Card(
-      elevation: 5,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15),),
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(color: Color.fromARGB(91, 0, 0, 0)),
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(15),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                "Customer Name",
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              Container(width: 30, height: 2, color: Color.fromRGBO(111, 5, 6, 1)),
-              SizedBox(height: 15),
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.grey.shade400),
-                  color: Colors.white,
-                ),
-                child: TextField(
-                  controller: CustomerNameController,
-                  decoration: InputDecoration(
-                    contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 15),
-                    border: InputBorder.none,
-                    hintText: "Enter Name...",
-                    hintStyle: GoogleFonts.poppins(fontSize: 15, color: Colors.grey),
-                  ),
-                  style: GoogleFonts.poppins(fontSize: 15),
-                ),
-              ),
-              
-              SizedBox(height: 30),
-              Text(
-                "Department",
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              Container(width: 30, height: 2, color: Color.fromRGBO(111, 5, 6, 1)),
-              SizedBox(height: 15),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.grey.shade400),
-                  color: Colors.white,
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<int>(
-                    value: _selectedDepartment,
-                    hint: Text("Select Department", style: GoogleFonts.poppins(fontSize: 15, color: Colors.grey)),
-                    isExpanded: true,
-                    icon: Icon(Icons.arrow_drop_down, color: Colors.black54),
-                    items: _departments.map((dept) {
-                      return DropdownMenuItem<int>(
-                        value: dept['button_id'],
-                        child: Text(dept['button_name'], style: GoogleFonts.poppins(fontSize: 15)),
-                      );
-                    }).toList(),
-                    onChanged: (int? value) {
-                      setState(() {
-                        _selectedDepartment = value!;
-                      });
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      )
     );
   }
 }

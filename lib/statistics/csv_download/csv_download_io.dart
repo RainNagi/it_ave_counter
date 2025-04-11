@@ -1,12 +1,9 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:android_intent_plus/android_intent.dart';
-import 'package:android_intent_plus/flag.dart';
 
-Future<void> downloadCSV(BuildContext context, String csvData) async {
+Future<void> downloadCSV(BuildContext context, String csvData, String type) async {
   if (await Permission.storage.request().isDenied) {
     _showDialog(context, "Storage Permission Denied", "Please allow storage access.");
     return;
@@ -24,7 +21,7 @@ Future<void> downloadCSV(BuildContext context, String csvData) async {
       action: 'android.intent.action.CREATE_DOCUMENT',
       type: 'text/csv',
       arguments: {
-        'android.intent.extra.TITLE': 'visitor_data.csv',
+        'android.intent.extra.TITLE': '$type.csv',
       },
     );
 
