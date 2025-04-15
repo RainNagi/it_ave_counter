@@ -695,9 +695,9 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: Column(
                     children: [                      
                       _selectedDepartment != 0 
-                        ? buttonCard(_departments, _selectedDepartment, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon) 
+                        ? buttonCard(context, _departments, _selectedDepartment, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon) 
                         : 
-                        buttonCard(_departments, 0, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon),
+                        buttonCard(context,_departments, 0, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon),
                       _isAddingDepartment || _isEditingDepartment?
                       SizedBox(
                         width: 150,
@@ -912,8 +912,8 @@ class _SettingsPageState extends State<SettingsPage> {
               height: 300,
               child:                   
                 _selectedDepartment != 0 
-                  ? buttonCard(_departments, _selectedDepartment, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon) 
-                  : buttonCard(_departments, 0, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon),
+                  ? buttonCard(context,_departments, _selectedDepartment, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon) 
+                  : buttonCard(context,_departments, 0, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon),
             ),
             SizedBox(height: 10,),
             _isAddingDepartment || _isEditingDepartment ?
@@ -1142,8 +1142,8 @@ class _SettingsPageState extends State<SettingsPage> {
               height: 200,
               child:                   
                 _selectedDepartment != 0 
-                  ? buttonCard(_departments, _selectedDepartment, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon) 
-                  : buttonCard(_departments, 0, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon),
+                  ? buttonCard(context,_departments, _selectedDepartment, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon) 
+                  : buttonCard(context,_departments, 0, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon),
             ),
             SizedBox(height: 10,),
             _isAddingDepartment || _isEditingDepartment ?
@@ -1259,10 +1259,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   SizedBox(
-                    width: 150,
+                    width: 130,
                     child: Text(
                       'Survey Questionaires',
-                      style: GoogleFonts.poppins(fontSize: 15, color: const Color.fromARGB(255, 0, 0, 0), fontWeight: FontWeight.bold),softWrap: true
+                      style: GoogleFonts.poppins(fontSize: 13, color: const Color.fromARGB(255, 0, 0, 0), fontWeight: FontWeight.bold),softWrap: true
                     ),
                   ),
                   _isAddingQuestion || _isEditingQuestion ?
@@ -1375,7 +1375,7 @@ class _SettingsPageState extends State<SettingsPage> {
             Container(
               padding: EdgeInsets.symmetric(horizontal: 5),
               height: 200,
-              child: questionCard(_questions,_isAddingQuestion,_isEditingQuestion,_selectedQuestion,_questionController)
+              child: questionCard(context, _questions,_isAddingQuestion,_isEditingQuestion,_selectedQuestion,_questionController)
             ),
             SizedBox(height: 10,),
             _isAddingQuestion || _isEditingQuestion ?
@@ -1609,7 +1609,7 @@ class _SettingsPageState extends State<SettingsPage> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 70),
                 height: 300,
-                child: questionCard(_questions,_isAddingQuestion,_isEditingQuestion,_selectedQuestion,_questionController)
+                child: questionCard(context, _questions,_isAddingQuestion,_isEditingQuestion,_selectedQuestion,_questionController)
               ),
               SizedBox(height: 10,),
               _isAddingQuestion || _isEditingQuestion ?
@@ -1724,7 +1724,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    'Departments',
+                    'Survey Questionaires',
                     style: GoogleFonts.poppins(
                       fontSize: 20, 
                       fontWeight: FontWeight.bold,
@@ -1883,8 +1883,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: Column(
                     children: [                      
                       _selectedQuestion != 0 
-                        ? questionCard(_questions,_isAddingQuestion,_isEditingQuestion,_selectedQuestion,_questionController)
-                        : questionCard(_questions,_isAddingQuestion,_isEditingQuestion,_selectedQuestion,_questionController),
+                        ? questionCard(context, _questions,_isAddingQuestion,_isEditingQuestion,_selectedQuestion,_questionController)
+                        : questionCard(context, _questions,_isAddingQuestion,_isEditingQuestion,_selectedQuestion,_questionController),
                       _isAddingQuestion || _isEditingQuestion ?
                       SizedBox(
                         width: 150,

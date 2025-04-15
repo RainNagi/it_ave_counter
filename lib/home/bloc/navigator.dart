@@ -5,6 +5,7 @@ import '../../authentication/login.dart';
 import '../../statistics/statistics.dart';
 import '../../settings/settings.dart';
 import '../../feedback/feedback.dart';
+// import '../../test.dart';
 
 void logout(context) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -33,3 +34,9 @@ void goToSettings(context){
     MaterialPageRoute(builder: (context) => SettingsPage())
   );
 }
+// void goToTest(context){
+//   Navigator.pushReplacement(
+//     context,
+//     MaterialPageRoute(builder: (context) => BarChartSample2())
+//   );
+// }

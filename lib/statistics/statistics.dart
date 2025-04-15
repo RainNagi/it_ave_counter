@@ -10,6 +10,7 @@ import 'csv_download/csv_download_io.dart' if (dart.library.html) 'csv_download/
 import 'package:csv/csv.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cupertino_sidebar/cupertino_sidebar.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:convert';
 import 'dart:math';
@@ -36,7 +37,8 @@ class _StatisticsPageState extends State<StatisticsPage> {
   @override
   void initState() {
     super.initState();
-    // fetchYears();
+    today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    _dayDateController.text = today;
     fetchWeekdayStatistics();
     _getDepartmentVisitors();
     _fetchDepartments();
@@ -48,8 +50,13 @@ class _StatisticsPageState extends State<StatisticsPage> {
   late List<Widget> _pages;
   int _selectedIndex = 0;
   
+  int selectedOption = 0;
+  
   final TextEditingController _startingDateController = TextEditingController();
   final TextEditingController _endingDateController = TextEditingController();
+  final TextEditingController _dayDateController = TextEditingController();
+  final TextEditingController _weekStartController = TextEditingController();
+  final TextEditingController _weekEndController = TextEditingController();
   
 
   List<dynamic> _visitors = [];
@@ -60,10 +67,13 @@ class _StatisticsPageState extends State<StatisticsPage> {
     {"table_id" : 2, "table_name" : "Department Visitor Count", "csv_title" : "department_visitor_data"},
     {"table_id" : 3, "table_name" : "Average Feedback Per Department", "csv_title" : "department_average_feedback"}
   ];
-  Map<String, int> statistics = {};
-  String selectedYear = DateTime.now().year.toString();
-  // String selectedMonthValue = "01"; 
-  // String selectedMonthName = "January"; 
+  List<dynamic> statistics = [];
+
+  String selectedYear = '';
+  String selectedMonth = ''; 
+  String today = '';
+  DateTime? weekStartDate;
+  DateTime? weekEndDate;
   int selectedDepartment = 0; 
   int selectedDepartmentFeedback = 0;
   int selectedTable = 0;
@@ -71,29 +81,63 @@ class _StatisticsPageState extends State<StatisticsPage> {
   double barWidth = 12; 
   int page = 1;
 
-  // List<String> years = [];
-  // List<Map<String, String>> months = [];
+  List<dynamic> years = [];
+  List<Map<String, String>> months = [];
   Map<String, int> weekdayStatistics = {};
   List<Map<String, dynamic>> departments = [];
   final List<String> weekdaysOrder = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-
+  String _getMonthName(String monthNumber) {
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    int index = int.parse(monthNumber) - 1;
+    return monthNames[index];
+  }
+  void reset() {
+    years.clear();
+    months.clear();
+    selectedYear = '';
+    selectedMonth = '';
+    _startingDateController.clear();
+    _endingDateController.clear();
+    _dayDateController.clear();
+    _weekStartController.clear();
+    _weekEndController.clear();
+  }
+  void refresh() {
+    fetchWeekdayStatistics();
+    _getDepartmentVisitors();
+    _fetchDepartments();
+    fetchStatistics();
+    fetchVisitors();
+    fetchAverageFeedback();
+    
+    if (_weekStartController.text.isNotEmpty){
+      _weekEndController.text = DateFormat('yyyy-MM-dd').format(weekEndDate!);
+    }
+  }
 
   Future<void> fetchStatistics() async {
     final url = Uri.parse('http://$ip/kpi_itave/statistics1.php');
     try {
       final response = await http.post(url,
         body: {
+          'daily_date' : _dayDateController.text,
           'starting_date': _startingDateController.text,
           'ending_date': _endingDateController.text,
+          'year': selectedYear,
+          'month': selectedMonth,
+          'week_start': _weekStartController.text,
+          'week_end': _weekEndController.text
         }
       );
       if (response.statusCode == 200) {
         try {
           List<dynamic> data = jsonDecode(response.body);
           setState(() {
-            statistics = {for (var item in data) item["button_id"].toString(): item["occurrences"]};
-            page = 1;
+            statistics = data;
           });
         } catch (e) {
           print("Error decoding JSON: $e");
@@ -122,18 +166,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
     }
     return count.round() > 0 ? ((totalFeedback / count) * 100).round() / 100.0 : 0.0;
   }
-  double _getAverageFeedback() {
-    double totalFeedback = 0.0;
-    int count = 0;
 
-    for (var data in _departmentVisitors) {
-      if (data['average_feedback'] != null) {
-        totalFeedback += double.parse(data['average_feedback'].toString());
-        count++;
-      }
-    }
-    return count.round() > 0 ? ((totalFeedback / count) * 100).round() / 100.0 : 0.0;
-  }
 
   Future<void> fetchWeekdayStatistics() async {
     final buttonId = departments[selectedDepartment]["button_id"];
@@ -142,8 +175,13 @@ class _StatisticsPageState extends State<StatisticsPage> {
       final response = await http.post(
         url,
         body: {
+          'daily_date' : _dayDateController.text,
           'starting_date': _startingDateController.text,
           'ending_date': _endingDateController.text,
+          'year': selectedYear,
+          'month': selectedMonth,
+          'week_start': _weekStartController.text,
+          'week_end': _weekEndController.text
         },
       );
 
@@ -157,6 +195,52 @@ class _StatisticsPageState extends State<StatisticsPage> {
       }
     } catch (e) {
       print("Error fetching weekday statistics: $e");
+    }
+  }
+  Future<void> _fetchYear() async {
+    final url = Uri.parse('http://$ip/kpi_itave/statistics1.php?action=getYears');
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = jsonDecode(response.body);
+        setState(() {
+          years = data;
+          selectedYear = years.isNotEmpty ? years[0] : '';
+        });
+      } else {
+        print("Failed to fetch years: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error fetching years: $e");
+    }
+    return;
+  }
+  Future<void> _fetchMonth() async {
+    final url = Uri.parse('http://$ip/kpi_itave/statistics1.php?action=getMonths&year=$selectedYear');
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = jsonDecode(response.body);
+        setState(() {
+          months = data.map<Map<String, String>>((m) {
+            return {
+              "value": m.toString(),
+              "label": _getMonthName(m.toString()),
+            };
+          }).toList();
+        });
+        if (months.isNotEmpty) {
+          selectedMonth = months[0]['value']!;
+          refresh();
+        }
+        fetchVisitors();
+      } else {
+        print("Failed to fetch Months: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error fetching Months: $e");
     }
   }
   
@@ -202,13 +286,14 @@ class _StatisticsPageState extends State<StatisticsPage> {
     if (picked != null) {
       setState(() {
         controller.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
-        if (_startingDateController.text.isNotEmpty && _endingDateController.text.isNotEmpty){
-          _getDepartmentVisitors();
-          fetchStatistics();
-          fetchWeekdayStatistics();
-          fetchVisitors();
-          fetchAverageFeedback();
-        } 
+        if (controller == _weekStartController) {
+          weekStartDate = picked;
+          weekEndDate = picked.add(Duration(days: 6));
+
+          _weekEndController.text = DateFormat('yyyy-MM-dd').format(weekEndDate!);
+        }
+
+        refresh();
       });
     }
   }
@@ -218,8 +303,13 @@ class _StatisticsPageState extends State<StatisticsPage> {
       final response = await http.post(
         url,
         body: {
+          'daily_date' : _dayDateController.text,
           'starting_date': _startingDateController.text,
           'ending_date': _endingDateController.text,
+          'year': selectedYear,
+          'month': selectedMonth,
+          'week_start': _weekStartController.text,
+          'week_end': _weekEndController.text
         }
       );
 
@@ -244,8 +334,13 @@ class _StatisticsPageState extends State<StatisticsPage> {
       final response = await http.post(
         url,
         body: {
+          'daily_date' : _dayDateController.text,
           'starting_date': _startingDateController.text,
           'ending_date': _endingDateController.text,
+          'year': selectedYear,
+          'month': selectedMonth,
+          'week_start': _weekStartController.text,
+          'week_end': _weekEndController.text
         }
       );
 
@@ -271,8 +366,13 @@ class _StatisticsPageState extends State<StatisticsPage> {
       final response = await http.post(
         url,
         body: {
+          'daily_date' : _dayDateController.text,
           'starting_date': _startingDateController.text,
           'ending_date': _endingDateController.text,
+          'year': selectedYear,
+          'month': selectedMonth,
+          'week_start': _weekStartController.text,
+          'week_end': _weekEndController.text
         }
       );
 
@@ -334,33 +434,34 @@ class _StatisticsPageState extends State<StatisticsPage> {
   }
   List<BarChartGroupData> getBarChartData() {
     List<BarChartGroupData> bars = [];
-    int index = 0;
-    statistics.forEach((key, value) {
+    for (int i = 0; i < statistics.length; i++) {
+      final item = statistics[i];
+      final double value = (item['occurrences'] as num).toDouble();
+      
       bars.add(
-        BarChartGroupData(x: index, barRods: [
+        BarChartGroupData(x: i, barRods: [
           BarChartRodData(
-            toY: value.toDouble(), 
-            color: Colors.blue, 
+            toY: value,
+            color: Colors.blue,
             width: barWidth,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(10),  
-              topRight: Radius.circular(10), 
-              bottomLeft: Radius.zero, 
-              bottomRight: Radius.zero, 
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(10),
+              topRight: Radius.circular(10),
             ),
           ),
         ]),
       );
-      index++;
-    });
+    }
     return bars;
   }
 
   @override
   Widget build(BuildContext context) {
     var screenType = ResponsiveBreakpoints.of(context).breakpoint.name;
-    double buttonFont = screenType == MOBILE ? 9 : 16;
+    double buttonFont = screenType == MOBILE ? 10 : 16;
     double textFieldSize = screenType == MOBILE ? 35 : 50;
+    double font = screenType == MOBILE ? 10 : 16;
+    double radioSize = screenType == MOBILE ? 16 : 24;
     List<Widget> getPages() {
       fetchWeekdayStatistics(); 
       return [
@@ -397,102 +498,370 @@ class _StatisticsPageState extends State<StatisticsPage> {
               padding: EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal:  16.0),
-                    width: 530,
-                    child: Text(
-                      "Select Date: ",
-                      style: GoogleFonts.poppins(
-                        fontSize: buttonFont, color: Colors.black54,
-                        fontWeight: FontWeight.bold,
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    color: Colors.grey[50],
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Wrap(
+                        alignment: WrapAlignment.start,
+                        spacing: 10,
+                        runSpacing: 4,
+                        children: [
+                          _buildRadioTile('Daily', 1, font, radioSize),
+                          _buildRadioTile('Weekly', 2, font, radioSize),
+                          _buildRadioTile('Monthly', 3, font, radioSize),
+                          _buildRadioTile('Yearly', 4, font, radioSize),
+                          _buildRadioTile('Custom', 5, font, radioSize),
+                        ],
                       ),
-                      textAlign: TextAlign.start,
                     ),
                   ),
                   SizedBox(height: 10,),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal:  16.0),
-                    width: double.infinity,
-                    child: ResponsiveRowColumn(
-                      rowMainAxisAlignment: MainAxisAlignment.center,
-                      rowCrossAxisAlignment: CrossAxisAlignment.center,
-                      columnMainAxisAlignment: MainAxisAlignment.center,
-                      columnCrossAxisAlignment: CrossAxisAlignment.center,
-                      layout: ResponsiveBreakpoints.of(context).smallerThan(TABLET)
-                        ? ResponsiveRowColumnType.COLUMN
-                        : ResponsiveRowColumnType.ROW,
-                      children: [
-                        ResponsiveRowColumnItem(
-                          child: SizedBox(
-                            width: 250,
-                            height: textFieldSize,
-                            child: TextField(
-                              style: GoogleFonts.poppins(fontSize: buttonFont),
-                              controller: _startingDateController,
-                              decoration: InputDecoration(
-                                labelText: "Starting Date",
-                                labelStyle: TextStyle(color: Colors.grey, fontSize:  buttonFont),
-                                hintText: "YYYY-MM-DD",
-                                border: OutlineInputBorder(),
-                                suffixIcon: IconButton(
-                                  onPressed: () => _selectDate(context, _startingDateController), 
-                                  icon: Icon(Icons.calendar_month)
-                                ),
+                  selectedOption == 1 ? 
+                    Container(
+                      width: 350,
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal:  16.0),
+                            width: 530,
+                            child: Text(
+                              "Select Date: ",
+                              style: GoogleFonts.poppins(
+                                fontSize: buttonFont, color: Colors.black54,
+                                fontWeight: FontWeight.bold,
                               ),
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                LengthLimitingTextInputFormatter(10), 
-                                FilteringTextInputFormatter.digitsOnly, 
-                                DateInputFormatter(), 
-                              ],
-                              onChanged: (value) {
-                                _getDepartmentVisitors();
-                                fetchStatistics();
-                                fetchWeekdayStatistics();
-                                fetchVisitors();
-                              },
+                              textAlign: TextAlign.start,
                             ),
                           ),
-                        ),
-                        ResponsiveRowColumnItem(
-                          child: SizedBox(width: 10, height: 10,),
-                        ),
-                        ResponsiveRowColumnItem(
-                          child: SizedBox(
-                            width: 250,
-                            height: textFieldSize,
-                            child: TextField(
-                              style: GoogleFonts.poppins(fontSize: buttonFont),
-                              controller: _endingDateController,
-                              decoration: InputDecoration(
-                                labelText: "Ending Date",
-                                labelStyle: TextStyle(color: Colors.grey, fontSize:  buttonFont),
-                                hintText: "YYYY-MM-DD",
-                                border: OutlineInputBorder(),
-                                suffixIcon: IconButton(
-                                  onPressed: () => _selectDate(context, _endingDateController), 
-                                  icon: Icon(Icons.calendar_month)
+                          SizedBox(height: 10,),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal:  16.0),
+                            width: double.infinity,
+                            child: SizedBox(
+                              width: 250,
+                              height: textFieldSize,
+                              child: TextField(
+                                style: GoogleFonts.poppins(fontSize: buttonFont),
+                                controller: _dayDateController,
+                                decoration: InputDecoration(
+                                  labelText: "Date",
+                                  labelStyle: TextStyle(color: Colors.grey, fontSize:  buttonFont),
+                                  hintText: "YYYY-MM-DD",
+                                  border: OutlineInputBorder(),
+                                  suffixIcon: IconButton(
+                                    onPressed: () => _selectDate(context, _dayDateController), 
+                                    icon: Icon(Icons.calendar_month)
+                                  ),
                                 ),
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  LengthLimitingTextInputFormatter(10), 
+                                  FilteringTextInputFormatter.digitsOnly, 
+                                  DateInputFormatter(), 
+                                ],
+                                onChanged: (value) {
+                                  reset();
+                                  refresh();
+                                },
                               ),
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                LengthLimitingTextInputFormatter(10), 
-                                FilteringTextInputFormatter.digitsOnly, 
-                                DateInputFormatter(), 
-                              ],
-                              onChanged: (value) {
-                                _getDepartmentVisitors();
-                                fetchStatistics();
-                                fetchWeekdayStatistics();
-                                fetchVisitors();
-                              },
                             ),
                           ),
-                        )
-                      ],
+                        ]
+                      ),
+                    ) : SizedBox.shrink(),
+                  selectedOption == 2
+                    ? 
+                    Container(
+                      width: 350,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Text(
+                              "Select Starting Date:",
+                              style: GoogleFonts.poppins(
+                                fontSize: buttonFont,
+                                color: Colors.black54,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal:  16.0),
+                            width: double.infinity,
+                            child: SizedBox(
+                              width: 250,
+                              height: textFieldSize,
+                              child: TextField(
+                                controller: _weekStartController,
+                                style: GoogleFonts.poppins(fontSize: buttonFont),
+                                decoration: InputDecoration(
+                                  labelText: "Start of Week (YYYY-MM-DD)",
+                                  border: OutlineInputBorder(),
+                                  suffixIcon: IconButton(
+                                    onPressed: () => _selectDate(context, _weekStartController),
+                                    icon: Icon(Icons.calendar_month),
+                                  ),
+                                ),
+                                inputFormatters: [
+                                  LengthLimitingTextInputFormatter(10),
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  DateInputFormatter(),
+                                ],
+                                onChanged: (value) {
+                                  weekStartDate = DateTime.tryParse(value);
+                                  weekEndDate = weekStartDate?.add(Duration(days: 6));
+                                  _weekStartController.text = DateFormat('yyyy-MM-dd').format(weekStartDate!);
+                                  _weekEndController.text = DateFormat('yyyy-MM-dd').format(weekEndDate!);
+                                  refresh();
+                                },
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                          Text("End of Week: ${_weekEndController.text}",style: TextStyle(fontSize: font),),
+                        ],
+                      )
                     )
-                  ),
+                    : SizedBox.shrink(),
+
+                  selectedOption == 3 ? 
+                    Container(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          DropdownButton<String>(
+                            value: selectedMonth,
+                            onChanged: (String? newValue) {
+                              if (newValue != null) {
+                                setState(() {
+                                  selectedMonth = newValue;
+                                  rowsPerPage = 20;
+                                  refresh();
+                                });
+                              }
+                            },
+                            items: months.isEmpty
+                              ? [
+                                  DropdownMenuItem<String>(
+                                    value: '',
+                                    child: Text("None"),
+                                  )
+                                ]
+                              : months.map((month) {
+                                  return DropdownMenuItem<String>(
+                                    value: month['value'],
+                                    child: Text(
+                                      month['label'] ?? '',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.black,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      softWrap: true,
+                                    ),
+                                  );
+                                }).toList(),
+                          ),
+                          SizedBox(width: 20), 
+                          DropdownButton<String>(
+                            value: selectedYear,
+                            onChanged: (String? newValue) {
+                              if (newValue != null) {
+                                setState(() async{
+                                  selectedYear = newValue;
+                                  await _fetchMonth();
+                                  refresh();
+                                });
+                              }
+                            },
+                            items: years.isEmpty
+                              ? [
+                                  DropdownMenuItem<String>(
+                                    value: '',
+                                    child: Text("None"),
+                                  )
+                                ]
+                              : years.map((year) {
+                                return DropdownMenuItem(
+                                  value: year.toString(),
+                                  child: Text(
+                                    year.toString(),
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.black,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    softWrap: true,
+                                  ),
+                                );
+                              }).toList(),
+                          ),
+                        ],
+                      ),
+                    ):SizedBox.shrink(),
+                  selectedOption == 4 ? 
+                    Container(
+                      child: DropdownButton<String>(
+                        value: selectedYear,
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              selectedYear = newValue;
+                              rowsPerPage = 20; 
+                              refresh();
+                            });
+                          }
+                        },
+                        items: years.isEmpty
+                              ? [
+                                  DropdownMenuItem<String>(
+                                    value: '',
+                                    child: Text("None"),
+                                  )
+                                ]
+                              : years.map((year) {
+                          return DropdownMenuItem(
+                            value: year.toString(),
+                            child: Text(year.toString(), style: GoogleFonts.poppins(color: Colors.black, fontSize: 15, fontWeight: FontWeight.bold),softWrap: true,),
+                          );
+                        }).toList(),
+                      ),
+                    ):SizedBox.shrink(),
+                  selectedOption == 5 ? 
+                    Container(
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal:  16.0),
+                            width: 530,
+                            child: Text(
+                              "Select Date: ",
+                              style: GoogleFonts.poppins(
+                                fontSize: buttonFont, color: Colors.black54,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.start,
+                            ),
+                          ),
+                          SizedBox(height: 10,),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal:  16.0),
+                            width: double.infinity,
+                            child: ResponsiveRowColumn(
+                              rowMainAxisAlignment: MainAxisAlignment.center,
+                              rowCrossAxisAlignment: CrossAxisAlignment.center,
+                              columnMainAxisAlignment: MainAxisAlignment.center,
+                              columnCrossAxisAlignment: CrossAxisAlignment.center,
+                              layout: ResponsiveBreakpoints.of(context).smallerThan(TABLET)
+                                ? ResponsiveRowColumnType.COLUMN
+                                : ResponsiveRowColumnType.ROW,
+                              children: [
+                                ResponsiveRowColumnItem(
+                                  child: SizedBox(
+                                    width: 250,
+                                    height: textFieldSize,
+                                    child: TextField(
+                                      style: GoogleFonts.poppins(fontSize: buttonFont),
+                                      controller: _startingDateController,
+                                      decoration: InputDecoration(
+                                        labelText: "Starting Date",
+                                        labelStyle: TextStyle(color: Colors.grey, fontSize:  buttonFont),
+                                        hintText: "YYYY-MM-DD",
+                                        border: OutlineInputBorder(),
+                                        suffixIcon: IconButton(
+                                          onPressed: () => _selectDate(context, _startingDateController), 
+                                          icon: Icon(Icons.calendar_month)
+                                        ),
+                                      ),
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [
+                                        LengthLimitingTextInputFormatter(10), 
+                                        FilteringTextInputFormatter.digitsOnly, 
+                                        DateInputFormatter(), 
+                                      ],
+                                      onChanged: (value) {
+                                        reset();
+                                        _getDepartmentVisitors();
+                                        fetchStatistics();
+                                        fetchWeekdayStatistics();
+                                        fetchVisitors();
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                ResponsiveRowColumnItem(
+                                  child: SizedBox(width: 10, height: 10,),
+                                ),
+                                ResponsiveRowColumnItem(
+                                  child: SizedBox(
+                                    width: 250,
+                                    height: textFieldSize,
+                                    child: TextField(
+                                      style: GoogleFonts.poppins(fontSize: buttonFont),
+                                      controller: _endingDateController,
+                                      decoration: InputDecoration(
+                                        labelText: "Ending Date",
+                                        labelStyle: TextStyle(color: Colors.grey, fontSize:  buttonFont),
+                                        hintText: "YYYY-MM-DD",
+                                        border: OutlineInputBorder(),
+                                        suffixIcon: IconButton(
+                                          onPressed: () => _selectDate(context, _endingDateController), 
+                                          icon: Icon(Icons.calendar_month)
+                                        ),
+                                      ),
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [
+                                        LengthLimitingTextInputFormatter(10), 
+                                        FilteringTextInputFormatter.digitsOnly, 
+                                        DateInputFormatter(), 
+                                      ],
+                                      onChanged: (value) {
+                                        reset();
+                                        _getDepartmentVisitors();
+                                        fetchStatistics();
+                                        fetchWeekdayStatistics();
+                                        fetchVisitors();
+                                      },
+                                    ),
+                                  ),
+                                )
+                              ],
+                            )
+                          ),
+                        ]
+                      ),
+                    ) :
+                    SizedBox.shrink(),
+                    
+                  SizedBox(height: 10),
+                  selectedOption != 0 ?
+                  ElevatedButton(
+                    onPressed: () {
+                      setState (() {
+                        selectedOption = 0;
+                        reset();
+                        refresh();
+                      });
+                    }, 
+                    child: Text(
+                        "Clear",
+                        style: GoogleFonts.poppins(
+                          fontSize: buttonFont, color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.start,
+                      ),
+                  ) : SizedBox.shrink(),
                   SizedBox(height: 10,),
                   Stack(
                     children: [
@@ -535,8 +904,9 @@ class _StatisticsPageState extends State<StatisticsPage> {
     );
   }
   Widget _reportTable() {
+    debugPrint = (String? message, {int? wrapWidth}) {};
     var screenType = ResponsiveBreakpoints.of(context).breakpoint.name;
-    double font = screenType == MOBILE? 9: 16;
+    double font = screenType == MOBILE? 7: 16;
     return SizedBox(
       width: double.infinity,
       child: Column(
@@ -560,7 +930,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
                           setState(() {
                             selectedTable = tables.indexWhere((table) => table["table_name"] == newValue);
                             rowsPerPage = 20; 
-
                             _reportTable();
                           });
                         }
@@ -611,7 +980,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
               color: Colors.white
             ),
             child: PaginatedDataTable2(
-              key: ValueKey(selectedTable),
+              key: ValueKey('$selectedTable-$selectedOption'),
               headingTextStyle: GoogleFonts.poppins(
                 textStyle: TextStyle(
                   fontSize: font,
@@ -623,24 +992,23 @@ class _StatisticsPageState extends State<StatisticsPage> {
               showFirstLastButtons: true,
               onRowsPerPageChanged: (value) {
                 setState(() {
-                  print(value);
                   rowsPerPage = value!;
                 });
               },
               columns: selectedTable == 0  ? [
-                DataColumn2(label: MouseRegion(child: Text("Visitor ID")), headingRowAlignment: MainAxisAlignment.center),
-                DataColumn2(label: Text("Department Visit"), headingRowAlignment: MainAxisAlignment.center),
-                DataColumn2(label: Text("TimeStamp"), headingRowAlignment: MainAxisAlignment.center),
+                DataColumn2(label: MouseRegion(child: Text("Visitor ID", style: GoogleFonts.poppins(color: Colors.black),)), headingRowAlignment: MainAxisAlignment.center),
+                DataColumn2(label: Text("Department Visit", style: GoogleFonts.poppins(color: Colors.black),), headingRowAlignment: MainAxisAlignment.center),
+                DataColumn2(label: Text("TimeStamp", style: GoogleFonts.poppins(color: Colors.black),), headingRowAlignment: MainAxisAlignment.center),
               ] : selectedTable == 1 ? [
-                DataColumn2(label: Text("Department ID"), headingRowAlignment: MainAxisAlignment.center),
-                DataColumn2(label: Text("Department"), headingRowAlignment: MainAxisAlignment.center),
-                DataColumn2(label: Text("Visitor Count"), headingRowAlignment: MainAxisAlignment.center),
-                DataColumn2(label: Text("Average Feedback"), headingRowAlignment: MainAxisAlignment.center),
+                DataColumn2(label: Text("Department ID", style: GoogleFonts.poppins(color: Colors.black),), headingRowAlignment: MainAxisAlignment.center),
+                DataColumn2(label: Text("Department", style: GoogleFonts.poppins(color: Colors.black),), headingRowAlignment: MainAxisAlignment.center),
+                DataColumn2(label: Text("Visitor Count", style: GoogleFonts.poppins(color: Colors.black),), headingRowAlignment: MainAxisAlignment.center),
+                DataColumn2(label: Text("Feedback Count", style: GoogleFonts.poppins(color: Colors.black),), headingRowAlignment: MainAxisAlignment.center),
               ] : selectedTable == 2 ? [
-                DataColumn2(label: Text("Button Name"), headingRowAlignment: MainAxisAlignment.center),
-                DataColumn2(label: Text("Question ID"), headingRowAlignment: MainAxisAlignment.center),
-                DataColumn2(label: Text("Visitor Count"), headingRowAlignment: MainAxisAlignment.center),
-                DataColumn2(label: Text("Average Feedback"), headingRowAlignment: MainAxisAlignment.center),
+                DataColumn2(label: Text("Button Name", style: GoogleFonts.poppins(color: Colors.black),), headingRowAlignment: MainAxisAlignment.center),
+                DataColumn2(label: Text("Question ID", style: GoogleFonts.poppins(color: Colors.black),), headingRowAlignment: MainAxisAlignment.center),
+                DataColumn2(label: Text("Visitor Count", style: GoogleFonts.poppins(color: Colors.black),), headingRowAlignment: MainAxisAlignment.center),
+                DataColumn2(label: Text("Average Feedback", style: GoogleFonts.poppins(color: Colors.black),), headingRowAlignment: MainAxisAlignment.center),
               ] : [],
               source: selectedTable == 0
                 ? VisitorDataSource(_visitors, font)
@@ -692,10 +1060,9 @@ class _StatisticsPageState extends State<StatisticsPage> {
                       drawHorizontalLine: true,
                       drawVerticalLine: false  
                     ),
-                    maxY: (statistics.values.isNotEmpty
-                            ? ((statistics.values.reduce((a, b) => a > b ? a : b) + 10) / 10).ceil() * 10
-                            : 10)
-                        .toDouble(),
+                    maxY: statistics.isNotEmpty
+                      ? (((statistics.map((e) => e["occurrences"] as int).reduce((a, b) => a > b ? a : b) + 10) / 10).ceil() * 10).toDouble()
+                      : 10.0,                    
                     barGroups: getBarChartData(),
                     titlesData: FlTitlesData(
                       topTitles: AxisTitles(
@@ -709,13 +1076,16 @@ class _StatisticsPageState extends State<StatisticsPage> {
                           showTitles: true,
                           getTitlesWidget: (double value, TitleMeta meta) {
                             int index = value.toInt();
-                            if (index < 0 || index >= departments.length) return Container(); // Prevent out-of-range errors
+                            if (index < 0 || index >= departments.length) return Container(); 
                             return Padding(
                               padding: EdgeInsets.only(top: 8),
                               child: Transform.rotate(
                                 angle: -0.3,
                                 child: Text(
-                                  departments[index]["button_name"], 
+                                  departments.firstWhere(
+                                    (d) => d['button_id'].toString() == statistics[index]['button_id'].toString(),
+                                    orElse: () => {"button_name": "Unknown"},
+                                  )['button_name'],
                                   style: GoogleFonts.poppins(fontSize: font),
                                 ),
                               ),
@@ -805,7 +1175,73 @@ class _StatisticsPageState extends State<StatisticsPage> {
       ),
     );
   }
+  Widget _buildRadioTile(String label, int value, font, radioSize) {
+    return InkWell(
+      onTap: () { 
+        setState(() async{
+          selectedOption = value;
+          reset();
+          if (value == 1) {
+            today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+            _dayDateController.text = today;
+          } else if (value == 2) {
+            weekStartDate = DateTime.tryParse(today)?.subtract(Duration(days: 6));
+            weekEndDate = weekStartDate?.add(Duration(days: 6));
+            _weekStartController.text = DateFormat('yyyy-MM-dd').format(weekStartDate!);
+            _weekEndController.text = DateFormat('yyyy-MM-dd').format(weekEndDate!);
+          } else if (value == 3) {
+            await _fetchYear();
+            await _fetchMonth();
+          } else if (value == 4) {
+            await _fetchYear();
+          }                
+          refresh();
+        });
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Transform.scale(
+            scale: radioSize / 24,
+            child: Radio(
+              value: value,
+              groupValue: selectedOption,
+              onChanged: (val) {
+                setState(() async{
+                  selectedOption = val!;
+                  reset();
+                  if (value == 1) {
+                    today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+                    _dayDateController.text = today;
+                  } else if (value == 2) {
+                    weekStartDate = DateTime.tryParse(today)?.subtract(Duration(days: 6));
+                    weekEndDate = weekStartDate?.add(Duration(days: 6));
+                    _weekStartController.text = DateFormat('yyyy-MM-dd').format(weekStartDate!);
+                    _weekEndController.text = DateFormat('yyyy-MM-dd').format(weekEndDate!);
+                  } else if (value == 3) {
+                    await _fetchYear();
+                    await _fetchMonth();
+                  } else if (value == 4) {
+                    await _fetchYear();
+                  }                
+                  refresh();
+                });
+              },
+            ),
+          ),
+          Text(label, style: TextStyle(fontSize: font, color: Colors.black87)),
+        ],
+      )
+    );
+
+    
+  }
 }
+
+
+
 
 
 class DateInputFormatter extends TextInputFormatter {

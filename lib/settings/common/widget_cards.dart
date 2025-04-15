@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rating_and_feedback_collector/rating_and_feedback_collector.dart';
-// import 'package:responsive_framework/responsive_framework.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '/../common/iconlist.dart';
@@ -8,7 +8,12 @@ import '/../common/iconlist.dart';
 final Map<String, IconData> _iconMap = IconDictionary.icons;
 String _iconSearchQuery = '';
 
-Widget questionCard(List<dynamic> questions,bool isAddingQuestion, bool isEditingQuestion, int selectedQuestion,TextEditingController _questionController) {
+
+Widget questionCard(BuildContext context, List<dynamic> questions,bool isAddingQuestion, bool isEditingQuestion, int selectedQuestion,TextEditingController _questionController) {
+  var screenType = ResponsiveBreakpoints.of(context).breakpoint.name;
+  
+  double questionTitleFont = screenType == MOBILE ? 0.05 : 0.037 ;
+  double questionFont = screenType == MOBILE ? 0.046 : 0.03 ; 
   int num = questions.length + 1;
   double _rating = 2.5;
   return Card(
@@ -54,7 +59,7 @@ Widget questionCard(List<dynamic> questions,bool isAddingQuestion, bool isEditin
                                 questions.isEmpty ? "Questions 0" :
                                 isAddingQuestion? "Question $num" : "Question $selectedQuestion",
                                 style: GoogleFonts.poppins(
-                                  fontSize: screenWidth * 0.03,
+                                  fontSize: screenWidth * questionTitleFont,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 textAlign: TextAlign.justify,
@@ -92,7 +97,7 @@ Widget questionCard(List<dynamic> questions,bool isAddingQuestion, bool isEditin
                                 : Text(
                                     questions.isEmpty ? "There is no Question" : questions[selectedQuestion - 1]["question"],
                                     style: GoogleFonts.poppins(
-                                      fontSize: screenWidth * 0.028,
+                                      fontSize: screenWidth * questionFont,
                                       fontWeight: FontWeight.bold,
                                     ),
                                     textAlign: TextAlign.center,
@@ -130,7 +135,12 @@ Widget questionCard(List<dynamic> questions,bool isAddingQuestion, bool isEditin
   );
 }
 
-Widget buttonCard(List<dynamic> departments, int department, bool isAddingDepartment, bool isEditingDepartment, TextEditingController departmentNameController, String selectedIcon){
+Widget buttonCard(BuildContext context, List<dynamic> departments, int department, bool isAddingDepartment, bool isEditingDepartment, TextEditingController departmentNameController, String selectedIcon){
+  var screenType = ResponsiveBreakpoints.of(context).breakpoint.name;
+  
+  double buttonTitleFont = screenType == MOBILE ? 0.05 : 0.037 ;
+  double counterFont = screenType == MOBILE ? 0.046 : 0.03 ; 
+  double visitorFont = screenType == MOBILE ? 0.02 : 0.015 ; 
   return Card(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
     child: Container(
@@ -185,7 +195,7 @@ Widget buttonCard(List<dynamic> departments, int department, bool isAddingDepart
                                     )
                                     : Text(
                                         departments.isNotEmpty ? departments[department]["button_name"] : "Department",
-                                        style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold),
+                                        style: GoogleFonts.poppins(fontSize: screenWidth * buttonTitleFont, fontWeight: FontWeight.bold),
                                       ),
                                   Container(width: 40, height: 5, color: Color.fromRGBO(111, 5, 6, 1)),
                                 ],
@@ -199,7 +209,7 @@ Widget buttonCard(List<dynamic> departments, int department, bool isAddingDepart
                                 ? 
                                 Text("100",
                                   style: GoogleFonts.poppins(
-                                    fontSize: 25, 
+                                    fontSize: screenWidth * counterFont, 
                                     color: Colors.black, 
                                     fontWeight: FontWeight.bold
                                   ),
@@ -207,7 +217,7 @@ Widget buttonCard(List<dynamic> departments, int department, bool isAddingDepart
                                 ) :
                                 Text(departments.isNotEmpty ? departments[department]['counter_count'].toString() : "100",
                                   style: GoogleFonts.poppins(
-                                    fontSize: 25, 
+                                    fontSize: screenWidth * counterFont, 
                                     color: Colors.black, 
                                     fontWeight: FontWeight.bold
                                   ),
@@ -215,7 +225,7 @@ Widget buttonCard(List<dynamic> departments, int department, bool isAddingDepart
                                 ),
                                 Text('Visitors',
                                   style: GoogleFonts.poppins(
-                                    fontSize: 10,
+                                    fontSize: screenWidth * visitorFont,
                                     color: Colors.grey[700]
                                   ), 
                                   textAlign: TextAlign.center
@@ -228,7 +238,7 @@ Widget buttonCard(List<dynamic> departments, int department, bool isAddingDepart
                       Expanded(
                         child: LayoutBuilder(
                           builder: (context, constraints) {
-                            double availableHeight = constraints.maxHeight; // Get dynamic height
+                            double availableHeight = constraints.maxHeight; 
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -275,9 +285,9 @@ Widget buttonCard(List<dynamic> departments, int department, bool isAddingDepart
             child: Center(
               child: 
               isAddingDepartment || isEditingDepartment?
-              Text("${departmentNameController.text} Visitor", style: GoogleFonts.poppins(fontSize: 12), textAlign: TextAlign.center)
+              Text("${departmentNameController.text} Visitor", style: GoogleFonts.poppins(fontSize: 10), textAlign: TextAlign.center)
               :
-              Text(departments.isNotEmpty ? departments[department]["button_name"]+" Visitor": "Department Visitor", style: GoogleFonts.poppins(fontSize: 12), textAlign: TextAlign.center),
+              Text(departments.isNotEmpty ? departments[department]["button_name"]+" Visitor": "Department Visitor", style: GoogleFonts.poppins(fontSize: 10), textAlign: TextAlign.center),
             ),
           ),
         ],

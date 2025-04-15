@@ -246,7 +246,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 } else if (value == 1) {
                   goToStatistics(context);
                 } else if (value == 0) {
-                  print(departments);
+                  // goToTest(context);
                 }
               },
               itemBuilder: (context) => [

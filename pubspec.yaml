@@ -31,6 +31,7 @@ dependencies:
   file_saver: ^0.2.14
   file_picker: ^10.0.0
   android_intent_plus: ^5.3.0
+  intl: ^0.20.2
 
 
 dev_dependencies:

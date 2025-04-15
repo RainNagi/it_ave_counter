@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:rating_and_feedback_collector/rating_and_feedback_collector.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'dart:convert';
 import '../home/home.dart';
 
@@ -221,7 +222,7 @@ class _FeedbackPageState extends State<CustomerFeedback> {
                         crossAxisCount: screenWidth > 800 ? 2 : 1, 
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
-                        childAspectRatio: screenWidth > 800 ? 2.1: 1.5,
+                        childAspectRatio: 1.5,
                       ),
                       itemCount: _questions.length + 1,
                       itemBuilder: (context, index) {
@@ -229,6 +230,7 @@ class _FeedbackPageState extends State<CustomerFeedback> {
                           return _buildCustomerNameCard();
                         } else {
                           return _buildQuestionCard(
+                            context,
                             index, 
                             _questions[index - 1]['question'],
                           );
@@ -357,7 +359,11 @@ class _FeedbackPageState extends State<CustomerFeedback> {
   }
 
   
-  Widget _buildQuestionCard(int index, String question) {
+  Widget _buildQuestionCard(BuildContext context, int index, String question) {
+    var screenType = ResponsiveBreakpoints.of(context).breakpoint.name;
+  
+  double questionTitleFont = screenType == MOBILE ? 0.05 : 0.037 ;
+  double questionFont = screenType == MOBILE ? 0.046 : 0.03 ; 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Container(
@@ -381,7 +387,7 @@ class _FeedbackPageState extends State<CustomerFeedback> {
               Expanded(
                 child: Container(
                   width: double.infinity,
-                  padding: EdgeInsets.all(10),
+                  padding: EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(15),
@@ -401,11 +407,12 @@ class _FeedbackPageState extends State<CustomerFeedback> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
                                   Text(
                                     "Question $index",
                                     style: GoogleFonts.poppins(
-                                      fontSize: screenWidth * 0.03,
+                                      fontSize: screenWidth * questionTitleFont,
                                       fontWeight: FontWeight.bold,
                                     ),
                                     textAlign: TextAlign.justify,
@@ -417,7 +424,7 @@ class _FeedbackPageState extends State<CustomerFeedback> {
                               Text(
                                 "${_ratings[index]}/5",
                                 style: GoogleFonts.poppins(
-                                  fontSize: screenWidth * 0.03,
+                                  fontSize: screenWidth * questionFont,
                                   fontWeight: FontWeight.bold,
                                 ),
                               )
@@ -439,7 +446,7 @@ class _FeedbackPageState extends State<CustomerFeedback> {
                                           child: Text(
                                             question,
                                             style: GoogleFonts.poppins(
-                                              fontSize: screenWidth * 0.028,
+                                              fontSize: screenWidth * questionFont,
                                               fontWeight: FontWeight.bold,
                                             ),
                                             textAlign: TextAlign.center,

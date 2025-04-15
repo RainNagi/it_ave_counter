@@ -1,26 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:data_table_2/data_table_2.dart';
 
     
-    double _getAverageFeedback(List data,int department_id) {
-      double totalFeedback = 0.0;
+    double _getAverageFeedback(List data, int departmentId) {
+      double total = 0.0;
       int count = 0;
 
       for (var item in data) {
         if (item['average_feedback'] != null) {
-          totalFeedback += double.tryParse(item['average_feedback'].toString()) ?? 0.0;
-          count++;
-        }
-        if (item['department_id'] == department_id && item['department_id'] != 0) {
-          totalFeedback += double.parse(item['average_feedback'].toString());
-          count++;
+          if (item['department_id'] == departmentId) {
+            total += double.tryParse(item['average_feedback'].toString()) ?? 0.0;
+            count++;
+          }
         }
       }
-      
 
-      return count > 0 ? ((totalFeedback / count) * 100).round() / 100.0 : 0.0;
+      return count > 0 ? ((total / count) * 100).round() / 100.0 : 0.0;
     }
+
 
 
 
@@ -33,6 +29,8 @@ class VisitorDataSource extends DataTableSource {
 
   @override
   DataRow? getRow(int index) {
+    
+    if (data.isEmpty) return null;
     if (index >= data.length) {
       final totalVisitors = data.length;  
       return DataRow.byIndex(
@@ -74,8 +72,10 @@ class DepartmentVisitorDataSource extends DataTableSource {
 
   @override
   DataRow? getRow(int index) {
+    
+    if (data.isEmpty) return null;
     if (index >= data.length) {
-      final totalVisitors = data.fold(0, (sum, data) => sum + int.parse(data['counter_count'].toString()));  
+      final totalVisitors = data.fold(0, (sum, data) => sum + int.parse(data['counter_count'].toString())); 
       return DataRow.byIndex(
         index: index,
         cells: [
@@ -94,7 +94,7 @@ class DepartmentVisitorDataSource extends DataTableSource {
         DataCell(Center(child: Text(row['button_id'].toString(), style: TextStyle(fontSize: font)))),
         DataCell(Center(child: Text(row['button_name'].toString(), style: TextStyle(fontSize: font)))),
         DataCell(Center(child: Text(row['counter_count'].toString(), style: TextStyle(fontSize: font)))),
-        DataCell(Center(child: Text(row['average_feedback']?.toString() ?? 'N/A', style: TextStyle(fontSize: font)))),
+        DataCell(Center(child: Text(row['feedback_count']?.toString() ?? 'N/A', style: TextStyle(fontSize: font)))),
       ],
     );
   }
@@ -122,6 +122,8 @@ class FeedbackDataSource extends DataTableSource {
   DataRow? getRow(int index) {
     final filtered = data.where((d) => d["department_id"] == departments[selectedDepartmentFeedback]["button_id"]).toList();
 
+    if (filtered.isEmpty) return null;
+
     if (index >= filtered.length) {
       final totalFeedbackCount = filtered.fold(0, (sum, item) => sum + int.parse(item['feedback_count'].toString()));
       return DataRow.byIndex(
@@ -130,7 +132,10 @@ class FeedbackDataSource extends DataTableSource {
           DataCell(Center(child: Text('', style: TextStyle(fontSize: font)))),
           DataCell(Center(child: Text('Total', style: TextStyle(fontWeight: FontWeight.bold, fontSize: font)))),
           DataCell(Center(child: Text('$totalFeedbackCount', style: TextStyle(fontWeight: FontWeight.bold, fontSize: font)))),
-          DataCell(Center(child: Text(_getAverageFeedback(data, departments[selectedDepartmentFeedback]["button_id"]).toString() , style: TextStyle(fontWeight: FontWeight.bold,fontSize: font)))),
+          DataCell(Center(child: Text(
+            _getAverageFeedback(data, departments[selectedDepartmentFeedback]["button_id"]).toString(),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: font),
+          ))),
         ],
       );
     }
@@ -148,10 +153,13 @@ class FeedbackDataSource extends DataTableSource {
   }
 
   @override
-  bool get isRowCountApproximate => false;
+  int get rowCount {
+    final filtered = data.where((d) => d["department_id"] == departments[selectedDepartmentFeedback]["button_id"]).toList();
+    return filtered.isEmpty ? 0 : filtered.length + 1;
+  }
 
   @override
-  int get rowCount => data.where((d) => d["department_id"] == departments[selectedDepartmentFeedback]["button_id"]).length + 1;  // Adding 1 for the totals row
+  bool get isRowCountApproximate => false;
 
   @override
   int get selectedRowCount => 0;

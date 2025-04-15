@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:kpi_test/settings/settings.dart';
-import 'package:kpi_test/statistics/statistics.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
