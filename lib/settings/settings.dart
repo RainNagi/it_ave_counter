@@ -418,7 +418,6 @@ class _SettingsPageState extends State<SettingsPage> {
   }
   @override
   Widget build(BuildContext context) {
-    var screenType = ResponsiveBreakpoints.of(context).breakpoint.name;
     List<Widget> getPages() {
       return [
         _buttonCRUDDesktop(),
