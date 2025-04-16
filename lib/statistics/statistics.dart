@@ -71,6 +71,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
 
   String selectedYear = '';
   String selectedMonth = ''; 
+  String selectedWeek = '1';
   String today = '';
   DateTime? weekStartDate;
   DateTime? weekEndDate;
@@ -114,9 +115,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
     fetchVisitors();
     fetchAverageFeedback();
     
-    if (_weekStartController.text.isNotEmpty){
-      _weekEndController.text = DateFormat('yyyy-MM-dd').format(weekEndDate!);
-    }
   }
 
   Future<void> fetchStatistics() async {
@@ -196,6 +194,18 @@ class _StatisticsPageState extends State<StatisticsPage> {
     } catch (e) {
       print("Error fetching weekday statistics: $e");
     }
+  }
+  void _createWeek() {
+    int weekNum = int.parse(selectedWeek);
+    int startDay = (weekNum - 1) * 7 + 1;
+    int endDay = weekNum * 7;
+    int maxDay = DateTime(int.parse(selectedYear), int.parse(selectedMonth) + 1, 0).day;
+    if (endDay > maxDay) endDay = maxDay;
+    DateTime startDate = DateTime(int.parse(selectedYear), int.parse(selectedMonth), startDay);
+    DateTime endDate = DateTime(int.parse(selectedYear), int.parse(selectedMonth), endDay);
+    _weekStartController.text = DateFormat('yyyy-MM-dd').format(startDate);
+    _weekEndController.text = DateFormat('yyyy-MM-dd').format(endDate);
+    return;
   }
   Future<void> _fetchYear() async {
     final url = Uri.parse('http://$ip/kpi_itave/statistics1.php?action=getYears');
@@ -516,6 +526,24 @@ class _StatisticsPageState extends State<StatisticsPage> {
                           _buildRadioTile('Monthly', 3, font, radioSize),
                           _buildRadioTile('Yearly', 4, font, radioSize),
                           _buildRadioTile('Custom', 5, font, radioSize),
+                          selectedOption != 0 ?
+                          ElevatedButton(
+                            onPressed: () {
+                              setState (() {
+                                selectedOption = 0;
+                                reset();
+                                refresh();
+                              });
+                            }, 
+                            child: Text(
+                                "Clear",
+                                style: GoogleFonts.poppins(
+                                  fontSize: buttonFont, color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.start,
+                              ),
+                          ) : SizedBox.shrink(),
                         ],
                       ),
                     ),
@@ -574,65 +602,117 @@ class _StatisticsPageState extends State<StatisticsPage> {
                         ]
                       ),
                     ) : SizedBox.shrink(),
-                  selectedOption == 2
-                    ? 
+                  selectedOption == 2 ? 
                     Container(
-                      width: 350,
-                      child: Column(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Text(
-                              "Select Starting Date:",
-                              style: GoogleFonts.poppins(
-                                fontSize: buttonFont,
-                                color: Colors.black54,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 10),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal:  16.0),
-                            width: double.infinity,
-                            child: SizedBox(
-                              width: 250,
-                              height: textFieldSize,
-                              child: TextField(
-                                controller: _weekStartController,
-                                style: GoogleFonts.poppins(fontSize: buttonFont),
-                                decoration: InputDecoration(
-                                  labelText: "Start of Week (YYYY-MM-DD)",
-                                  border: OutlineInputBorder(),
-                                  suffixIcon: IconButton(
-                                    onPressed: () => _selectDate(context, _weekStartController),
-                                    icon: Icon(Icons.calendar_month),
+                          DropdownButton<String>(
+                            value: selectedWeek,
+                            onChanged: (String? newValue) {
+                              if (newValue != null) {
+                                setState(() {
+                                  selectedWeek = newValue;
+                                  _createWeek();
+                                  refresh();
+                                });
+                              }
+                            },
+                            items: List.generate(selectedMonth == "02" ? 4 : 5, (index) {
+                              int weekNumber = index + 1;
+                              String suffix;
+                              if (weekNumber == 1) suffix = 'st';
+                              else if (weekNumber == 2) suffix = 'nd';
+                              else if (weekNumber == 3) suffix = 'rd';
+                              else suffix = 'th';
+
+                              return DropdownMenuItem<String>(
+                                value: "$weekNumber",
+                                child: Text(
+                                  "$weekNumber$suffix Week",
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.black,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                inputFormatters: [
-                                  LengthLimitingTextInputFormatter(10),
-                                  FilteringTextInputFormatter.digitsOnly,
-                                  DateInputFormatter(),
-                                ],
-                                onChanged: (value) {
-                                  weekStartDate = DateTime.tryParse(value);
-                                  weekEndDate = weekStartDate?.add(Duration(days: 6));
-                                  _weekStartController.text = DateFormat('yyyy-MM-dd').format(weekStartDate!);
-                                  _weekEndController.text = DateFormat('yyyy-MM-dd').format(weekEndDate!);
-                                  refresh();
-                                },
-                              ),
-                            ),
+                              );
+                            }),
                           ),
-                          SizedBox(height: 10),
-                          Text("End of Week: ${_weekEndController.text}",style: TextStyle(fontSize: font),),
+                          SizedBox(width: 20), 
+                          DropdownButton<String>(
+                            value: selectedMonth,
+                            onChanged: (String? newValue) {
+                              if (newValue != null) {
+                                setState(() {
+                                  selectedMonth = newValue;
+                                  selectedWeek = "1";
+                                  rowsPerPage = 20;
+                                  _createWeek();
+                                  refresh();
+                                });
+                              }
+                            },
+                            items: months.isEmpty
+                              ? [
+                                  DropdownMenuItem<String>(
+                                    value: '',
+                                    child: Text("None"),
+                                  )
+                                ]
+                              : months.map((month) {
+                                  return DropdownMenuItem<String>(
+                                    value: month['value'],
+                                    child: Text(
+                                      month['label'] ?? '',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.black,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      softWrap: true,
+                                    ),
+                                  );
+                                }).toList(),
+                          ),
+                          SizedBox(width: 20), 
+                          DropdownButton<String>(
+                            value: selectedYear,
+                            onChanged: (String? newValue) {
+                              if (newValue != null) {
+                                setState(() async{
+                                  selectedYear = newValue;
+                                  await _fetchMonth();
+                                  refresh();
+                                });
+                              }
+                            },
+                            items: years.isEmpty
+                              ? [
+                                  DropdownMenuItem<String>(
+                                    value: '',
+                                    child: Text("None"),
+                                  )
+                                ]
+                              : years.map((year) {
+                                return DropdownMenuItem(
+                                  value: year.toString(),
+                                  child: Text(
+                                    year.toString(),
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.black,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    softWrap: true,
+                                  ),
+                                );
+                              }).toList(),
+                          ),
                         ],
-                      )
-                    )
-                    : SizedBox.shrink(),
-
+                      ),
+                    ):SizedBox.shrink(),
                   selectedOption == 3 ? 
                     Container(
                       child: Row(
@@ -843,25 +923,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
                     ) :
                     SizedBox.shrink(),
                     
-                  SizedBox(height: 10),
-                  selectedOption != 0 ?
-                  ElevatedButton(
-                    onPressed: () {
-                      setState (() {
-                        selectedOption = 0;
-                        reset();
-                        refresh();
-                      });
-                    }, 
-                    child: Text(
-                        "Clear",
-                        style: GoogleFonts.poppins(
-                          fontSize: buttonFont, color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.start,
-                      ),
-                  ) : SizedBox.shrink(),
                   SizedBox(height: 10,),
                   Stack(
                     children: [
@@ -1185,10 +1246,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
             today = DateFormat('yyyy-MM-dd').format(DateTime.now());
             _dayDateController.text = today;
           } else if (value == 2) {
-            weekStartDate = DateTime.tryParse(today)?.subtract(Duration(days: 6));
-            weekEndDate = weekStartDate?.add(Duration(days: 6));
-            _weekStartController.text = DateFormat('yyyy-MM-dd').format(weekStartDate!);
-            _weekEndController.text = DateFormat('yyyy-MM-dd').format(weekEndDate!);
+            await _fetchYear();
+            await _fetchMonth(); 
+            _createWeek();
+            refresh();   
           } else if (value == 3) {
             await _fetchYear();
             await _fetchMonth();
@@ -1216,10 +1277,11 @@ class _StatisticsPageState extends State<StatisticsPage> {
                     today = DateFormat('yyyy-MM-dd').format(DateTime.now());
                     _dayDateController.text = today;
                   } else if (value == 2) {
-                    weekStartDate = DateTime.tryParse(today)?.subtract(Duration(days: 6));
-                    weekEndDate = weekStartDate?.add(Duration(days: 6));
-                    _weekStartController.text = DateFormat('yyyy-MM-dd').format(weekStartDate!);
-                    _weekEndController.text = DateFormat('yyyy-MM-dd').format(weekEndDate!);
+                    await _fetchYear();
+                    await _fetchMonth();
+                    _createWeek();
+
+                    refresh();                   
                   } else if (value == 3) {
                     await _fetchYear();
                     await _fetchMonth();

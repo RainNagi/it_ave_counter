@@ -57,7 +57,7 @@ Widget questionCard(BuildContext context, List<dynamic> questions,bool isAddingQ
                               width: double.infinity,
                               child: Text(
                                 questions.isEmpty ? "Questions 0" :
-                                isAddingQuestion? "Question $num" : "Question $selectedQuestion",
+                                isAddingQuestion? "Question $num" : "Question ${selectedQuestion+1}",
                                 style: GoogleFonts.poppins(
                                   fontSize: screenWidth * questionTitleFont,
                                   fontWeight: FontWeight.bold,
@@ -95,7 +95,7 @@ Widget questionCard(BuildContext context, List<dynamic> questions,bool isAddingQ
                                     maxLines: null,
                                   )
                                 : Text(
-                                    questions.isEmpty ? "There is no Question" : questions[selectedQuestion - 1]["question"],
+                                    questions.isEmpty ? "There is no Question" : questions[selectedQuestion]["question"],
                                     style: GoogleFonts.poppins(
                                       fontSize: screenWidth * questionFont,
                                       fontWeight: FontWeight.bold,

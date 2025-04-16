@@ -34,9 +34,11 @@ class _SettingsPageState extends State<SettingsPage> {
 
   // question CRUD
   List<Map<String, dynamic>> _questions = [];
+  List<Map<String, dynamic>> filteredQuestions = [];
   bool _isAddingQuestion = false;
   bool _isEditingQuestion = false;
-  int _selectedQuestion = 1;
+  int _selectedQuestion = 0;
+  int _selectedDepartmentInQuestion = -1;
   TextEditingController _questionController = TextEditingController();
 
   @override
@@ -44,6 +46,7 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
     _fetchQuestions();
     _fetchDepartments();
+    filterQuestionsByDepartment();
   }
 
   // button CRUD
@@ -210,6 +213,7 @@ class _SettingsPageState extends State<SettingsPage> {
           setState(() {
             _questions.clear(); 
             _questions = List<Map<String, dynamic>>.from(data);
+            filterQuestionsByDepartment();
           });
 
         } else {
@@ -222,6 +226,19 @@ class _SettingsPageState extends State<SettingsPage> {
       print("Error fetching questions data: $e");
     }
   }
+  void filterQuestionsByDepartment() {
+    
+    if (_selectedDepartmentInQuestion == -1) {
+      filteredQuestions = _questions
+          .where((q) => q['department_id'] == 0)
+          .toList();
+    } else {
+      filteredQuestions = _questions
+          .where((q) => q['department_id'] == _departments[_selectedDepartmentInQuestion]["button_id"])
+          .toList();
+    }
+  }
+
   void _addQuestion() async {
     if (_questionController.text.trim().isEmpty) {
       _showDialog("Error", "Question cannot be empty.");
@@ -233,6 +250,7 @@ class _SettingsPageState extends State<SettingsPage> {
         url,
         body: {
           'question': _questionController.text,
+          'department': _selectedDepartmentInQuestion == -1 ? "0" : _departments[_selectedDepartmentInQuestion]['button_id'].toString(),
         },
       );
       final responseData = jsonDecode(response.body);
@@ -261,11 +279,11 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
   Future<void> _archiveQuestion() async {
-    if (_selectedQuestion-1 < 0 || _selectedQuestion-1 >= _questions.length) {
+    if (_selectedQuestion < 0 || _selectedQuestion >= _questions.length) {
       print("Invalid Question index.");
       return;
     }
-    int questionId = _questions[_selectedQuestion-1]["question_id"];
+    int questionId = _questions[_selectedQuestion]["question_id"];
     final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=questions&action=archiveQuestion');
     try {
       final response = await http.post(url, body: {'questionId': questionId.toString()});
@@ -301,14 +319,13 @@ class _SettingsPageState extends State<SettingsPage> {
       _showDialog("Error", "Question cannot be empty.");
       return;
     }
-    int quesId = _questions[_selectedQuestion-1]["question_id"];
     // String defaultIcon = _departments[_selectedDepartment]["button_icon"];
     final url = Uri.parse('http://$ip/kpi_itave/settings.php?section=questions&action=editQuestion');
     try {
       final response = await http.post(
         url,
         body: {
-          'question_id' : quesId.toString(),
+          'question_id' : filteredQuestions[_selectedQuestion]["question_id"].toString(),
           'question' : _questionController.text
         },
       );
@@ -401,6 +418,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
   @override
   Widget build(BuildContext context) {
+    var screenType = ResponsiveBreakpoints.of(context).breakpoint.name;
     List<Widget> getPages() {
       return [
         _buttonCRUDDesktop(),
@@ -666,23 +684,17 @@ class _SettingsPageState extends State<SettingsPage> {
                                   return ListTile(
                                     title: Text(_departments[index]['button_name'] ,),
                                     onTap: () {
+                                      _isEditingDepartment || _isAddingDepartment ? print("None") :
                                       setState(() {
                                         _selectedDepartment = index;
+                                        _fetchDepartments();
                                       });
                                     },
                                   );
                                 },
                               ),
                             ),
-                            if (_isAddingDepartment || _isEditingDepartment)
-                              Positioned.fill(
-                                child: AbsorbPointer(
-                                  absorbing: true, 
-                                  child: Container(
-                                    color: Colors.black.withOpacity(0.1), 
-                                  ),
-                                ),
-                              ),
+                            
                           ],
                         )
                       ),
@@ -1371,11 +1383,65 @@ class _SettingsPageState extends State<SettingsPage> {
                 ],
               ),
             ),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(10),
+              child: _departments.isEmpty
+                ? Text("None")
+                : DropdownButton<String>(
+                    value: _selectedDepartmentInQuestion == -1
+                        ? "General Question"
+                        : _departments[_selectedDepartmentInQuestion]["button_name"],
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          _selectedQuestion = 0;
+                          if (newValue == "General Question") {
+                            _selectedDepartmentInQuestion = -1;
+                          } else {
+                            _selectedDepartmentInQuestion = _departments.indexWhere(
+                              (dept) => dept["button_name"] == newValue,
+                            );
+                          }
+                          filterQuestionsByDepartment(); 
+                        });
+                      }
+                    },
+                    items: [
+                      DropdownMenuItem(
+                        value: "General Question",
+                        child: Text(
+                          "General Question",
+                          style: GoogleFonts.poppins(
+                            color: Colors.black,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          softWrap: true,
+                        ),
+                      ),
+                      ..._departments.map((dept) {
+                        return DropdownMenuItem(
+                          value: dept["button_name"].toString(),
+                          child: Text(
+                            dept["button_name"].toString(),
+                            style: GoogleFonts.poppins(
+                              color: Colors.black,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            softWrap: true,
+                          ),
+                        );
+                      }).toList(),
+                    ],
+                  ),
+            ),
             SizedBox(height: 10),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 5),
               height: 200,
-              child: questionCard(context, _questions,_isAddingQuestion,_isEditingQuestion,_selectedQuestion,_questionController)
+              child: questionCard(context, filteredQuestions,_isAddingQuestion,_isEditingQuestion,_selectedQuestion,_questionController)
             ),
             SizedBox(height: 10,),
             _isAddingQuestion || _isEditingQuestion ?
@@ -1453,6 +1519,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
             ),
+            
             SizedBox(height: 10,),
             Expanded(
               child: SizedBox(
@@ -1464,7 +1531,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     mainAxisSpacing: 5,
                     childAspectRatio: 1.5,
                   ),
-                  itemCount: _questions.length,
+                  itemCount: filteredQuestions.length,
                   itemBuilder: (context, index) {
                     return _listCard("question",index);
                   },
@@ -1607,9 +1674,63 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               SizedBox(height: 10),
               Container(
+                width: 300,
+                padding: EdgeInsets.all(10),
+                child:  _departments.isEmpty
+                  ? Text("")
+                  : DropdownButton<String>(
+                      value: _selectedDepartmentInQuestion == -1
+                          ? "General Question"
+                          : _departments[_selectedDepartmentInQuestion]["button_name"],
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            _selectedQuestion = 0;
+                            if (newValue == "General Question") {
+                              _selectedDepartmentInQuestion = -1;
+                            } else {
+                              _selectedDepartmentInQuestion = _departments.indexWhere(
+                                (dept) => dept["button_name"] == newValue,
+                              );
+                            }
+                            filterQuestionsByDepartment(); // if you're using the filter function
+                          });
+                        }
+                      },
+                      items: [
+                        DropdownMenuItem(
+                          value: "General Question",
+                          child: Text(
+                            "General Question",
+                            style: GoogleFonts.poppins(
+                              color: Colors.black,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            softWrap: true,
+                          ),
+                        ),
+                        ..._departments.map((dept) {
+                          return DropdownMenuItem(
+                            value: dept["button_name"].toString(),
+                            child: Text(
+                              dept["button_name"].toString(),
+                              style: GoogleFonts.poppins(
+                                color: Colors.black,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              softWrap: true,
+                            ),
+                          );
+                        }).toList(),
+                      ],
+                    ),
+              ),
+              Container(
                 padding: EdgeInsets.symmetric(horizontal: 70),
                 height: 300,
-                child: questionCard(context, _questions,_isAddingQuestion,_isEditingQuestion,_selectedQuestion,_questionController)
+                child: questionCard(context, filteredQuestions,_isAddingQuestion,_isEditingQuestion,_selectedQuestion,_questionController)
               ),
               SizedBox(height: 10,),
               _isAddingQuestion || _isEditingQuestion ?
@@ -1688,6 +1809,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
               SizedBox(height: 10,),
+              
               SizedBox(
                 width: double.infinity,
                 height: 480,
@@ -1698,7 +1820,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     mainAxisSpacing: 10,
                     childAspectRatio: 1.5,
                   ),
-                  itemCount: _questions.length,
+                  itemCount: filteredQuestions.length,
                   itemBuilder: (context, index) {
                     return _listCard("question",index);
                   },
@@ -1832,6 +1954,32 @@ class _SettingsPageState extends State<SettingsPage> {
                           ],
                         ),
                       ),
+                      // ElevatedButton(
+                      //   onPressed: () => setState(() {
+                      //     print("Selected Question: $_selectedQuestion");
+                      //     print("filtered Question $filteredQuestions");
+                      //     print("Questions: $_questions");
+                      //     print("Selected Question ${filteredQuestions[_selectedQuestion]}");
+                      //   }),
+                      //   child: Row(
+                      //     crossAxisAlignment: CrossAxisAlignment.center,
+                      //     children: [
+                      //       Icon(
+                      //         LucideIcons.infinity,
+                      //         color: const Color.fromARGB(255, 0, 0, 0),
+                      //         size: 15,
+                      //       ),
+                      //       SizedBox(width: 2),
+                      //       Text(
+                      //         "Test",
+                      //         style: GoogleFonts.poppins(
+                      //           fontSize: 15, 
+                      //           color: const Color.fromARGB(255, 0, 0, 0)
+                      //         ),
+                      //       ),
+                      //     ],
+                      //   ),
+                      // ),
                     ],
                   )
                   
@@ -1845,34 +1993,81 @@ class _SettingsPageState extends State<SettingsPage> {
               children: [
                 Expanded(
                   child: Card(
-                    child: Stack(
+                    child: Column(
                       children: [
+                        Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(10),
+                          child: _departments.isEmpty
+                            ? Text("None")
+                            : DropdownButton<String>(
+                                value: _selectedDepartmentInQuestion == -1
+                                    ? "General Question"
+                                    : _departments[_selectedDepartmentInQuestion]["button_name"],
+                                onChanged: (String? newValue) {
+                                  if (newValue != null) {
+                                    setState(() {
+                                      _selectedQuestion = 0;
+                                      if (newValue == "General Question") {
+                                        _selectedDepartmentInQuestion = -1;
+                                      } else {
+                                        _selectedDepartmentInQuestion = _departments.indexWhere(
+                                          (dept) => dept["button_name"] == newValue,
+                                        );
+                                      }
+                                      filterQuestionsByDepartment(); 
+                                    });
+                                  }
+                                },
+                                items: [
+                                  DropdownMenuItem(
+                                    value: "General Question",
+                                    child: Text(
+                                      "General Question",
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.black,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      softWrap: true,
+                                    ),
+                                  ),
+                                  ..._departments.map((dept) {
+                                    return DropdownMenuItem(
+                                      value: dept["button_name"].toString(),
+                                      child: Text(
+                                        dept["button_name"].toString(),
+                                        style: GoogleFonts.poppins(
+                                          color: Colors.black,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        softWrap: true,
+                                      ),
+                                    );
+                                  }).toList(),
+                                ],
+                              ),
+                        ),
                         SizedBox(
                           height: 300,
                           child: ListView.builder(
-                            itemCount: _questions.length,
+                            itemCount: filteredQuestions.length,
                             itemBuilder: (context, index) {
-                              int questnum = index + 1;
                               return ListTile(
-                                title: Text("Question $questnum",),
+                                title: Text("Question ${index+1}",),
                                 onTap: () {
+                                  _isEditingQuestion || _isAddingQuestion ? print("None") :
                                   setState(() {
-                                    _selectedQuestion = questnum;
+                                    _selectedQuestion = index;
+                                    _fetchQuestions();
                                   });
                                 },
                               );
                             },
                           ),
                         ),
-                        if (_isAddingDepartment || _isEditingDepartment)
-                          Positioned.fill(
-                            child: AbsorbPointer(
-                              absorbing: true, 
-                              child: Container(
-                                color: Colors.black.withOpacity(0.1), 
-                              ),
-                            ),
-                          ),
+              
                       ],
                     )
                   ),
@@ -1883,8 +2078,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: Column(
                     children: [                      
                       _selectedQuestion != 0 
-                        ? questionCard(context, _questions,_isAddingQuestion,_isEditingQuestion,_selectedQuestion,_questionController)
-                        : questionCard(context, _questions,_isAddingQuestion,_isEditingQuestion,_selectedQuestion,_questionController),
+                        ? questionCard(context, filteredQuestions,_isAddingQuestion,_isEditingQuestion,_selectedQuestion,_questionController)
+                        : questionCard(context, filteredQuestions,_isAddingQuestion,_isEditingQuestion,_selectedQuestion,_questionController),
                       _isAddingQuestion || _isEditingQuestion ?
                       SizedBox(
                         width: 150,
@@ -1969,8 +2164,8 @@ class _SettingsPageState extends State<SettingsPage> {
   }
   Widget _listCard(String type, int id) {
     int departmentID = 0;
-    int questionID = 1;
-    type == "question" ? questionID = id + 1 : departmentID = id;
+    int questionID = 0;
+    type == "question" ? questionID = id : departmentID = id;
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: InkWell(
@@ -1998,7 +2193,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
-                      type == "question" ? "Question $questionID" : _departments[departmentID]["button_name"],
+                      type == "question" ? "Question ${questionID+1} " : _departments[departmentID]["button_name"],
                       style: GoogleFonts.poppins(
                         fontSize: screenWidth * 0.09, 
                         fontWeight: FontWeight.bold,
