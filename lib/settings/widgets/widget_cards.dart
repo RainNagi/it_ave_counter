@@ -15,7 +15,6 @@ Widget questionCard(BuildContext context, List<dynamic> questions,bool isAddingQ
   double questionTitleFont = screenType == MOBILE ? 0.05 : 0.037 ;
   double questionFont = screenType == MOBILE ? 0.046 : 0.03 ; 
   int num = questions.length + 1;
-  double _rating = 2.5;
   return Card(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
     child: Container(
@@ -114,7 +113,7 @@ Widget questionCard(BuildContext context, List<dynamic> questions,bool isAddingQ
                                   emptyIcon: Icons.star_border,
                                   filledColor: Colors.amber,
                                   emptyColor: Colors.grey,
-                                  currentRating: _rating,
+                                  currentRating: 2.5,
                                   onRatingChanged: (rating) {
                                   },
                                 ),
@@ -135,7 +134,7 @@ Widget questionCard(BuildContext context, List<dynamic> questions,bool isAddingQ
   );
 }
 
-Widget buttonCard(BuildContext context, List<dynamic> departments, int department, bool isAddingDepartment, bool isEditingDepartment, TextEditingController departmentNameController, String selectedIcon){
+Widget buttonCard(BuildContext context, List<dynamic> departments, int department, bool isAddingDepartment, bool isEditingDepartment, TextEditingController departmentNameController, String selectedIcon , Function(String) onIconChanged){
   var screenType = ResponsiveBreakpoints.of(context).breakpoint.name;
   
   double buttonTitleFont = screenType == MOBILE ? 0.05 : 0.037 ;
@@ -247,7 +246,7 @@ Widget buttonCard(BuildContext context, List<dynamic> departments, int departmen
                                 isAddingDepartment || isEditingDepartment?
                                 GestureDetector(
                                   onTap:() {
-                                    _showIconPickerDialog(context, selectedIcon);
+                                    _showIconPickerDialog(context, onIconChanged); 
                                   },
                                   child: Icon(
                                     selectedIcon == 'lucide_plus_circle' && isEditingDepartment ? IconDictionary.icons[departments[department]["button_icon"]] :_iconMap[selectedIcon],
@@ -285,9 +284,9 @@ Widget buttonCard(BuildContext context, List<dynamic> departments, int departmen
             child: Center(
               child: 
               isAddingDepartment || isEditingDepartment?
-              Text("${departmentNameController.text} Visitor", style: GoogleFonts.poppins(fontSize: 10), textAlign: TextAlign.center)
+              Text("${departmentNameController.text} Feedback", style: GoogleFonts.poppins(fontSize: 13), textAlign: TextAlign.center)
               :
-              Text(departments.isNotEmpty ? departments[department]["button_name"]+" Visitor": "Department Visitor", style: GoogleFonts.poppins(fontSize: 10), textAlign: TextAlign.center),
+              Text(departments.isNotEmpty ? departments[department]["button_name"]+" Feedback": "Department Feedback", style: GoogleFonts.poppins(fontSize: 13), textAlign: TextAlign.center),
             ),
           ),
         ],
@@ -297,7 +296,7 @@ Widget buttonCard(BuildContext context, List<dynamic> departments, int departmen
 }
 
 
-void _showIconPickerDialog(BuildContext context, String selectedIcon) {
+void _showIconPickerDialog(BuildContext context, Function(String) onIconSelected) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -306,6 +305,7 @@ void _showIconPickerDialog(BuildContext context, String selectedIcon) {
           List<String> filteredIcons = _iconMap.keys
               .where((key) => key.toLowerCase().contains(_iconSearchQuery.toLowerCase()) && key != "lucide_plus_circle")
               .toList();
+
           return AlertDialog(
             title: const Text("Icon Picker"),
             content: Column(
@@ -323,7 +323,7 @@ void _showIconPickerDialog(BuildContext context, String selectedIcon) {
                     });
                   },
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 SizedBox(
                   width: 300,
                   height: 300,
@@ -337,19 +337,16 @@ void _showIconPickerDialog(BuildContext context, String selectedIcon) {
                     itemCount: filteredIcons.length,
                     itemBuilder: (context, index) {
                       String iconName = filteredIcons[index];
-                      return  GestureDetector(
+                      return GestureDetector(
                         onTap: () {
-                          setState(() {
-                            selectedIcon = iconName;
-                          });
-                          // _fetchDepartments();
+                          onIconSelected(iconName); // 👈 callback to parent
                           Navigator.pop(context);
                         },
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(_iconMap[iconName], size: 40, color: Colors.black),
-                            Text(iconName, style: const TextStyle(fontSize: 12)),
+                            Text(iconName, style: const TextStyle(fontSize: 12), softWrap: true),
                           ],
                         ),
                       );

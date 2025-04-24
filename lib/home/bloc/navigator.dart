@@ -22,10 +22,11 @@ void goToStatistics(context){
     MaterialPageRoute(builder: (context) => StatisticsPage())
   );
 }
-void goToCustomerFeedBack(context) {
+void goToCustomerFeedBack(context, buttonId) {
+  
   Navigator.pushReplacement(
     context,
-    MaterialPageRoute(builder: (context) => CustomerFeedback())
+    MaterialPageRoute(builder: (context) => CustomerFeedback(buttonId: buttonId,))
   );
 }
 void goToSettings(context){

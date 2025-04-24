@@ -12,7 +12,10 @@ import '../home/home.dart';
 
 
 class CustomerFeedback extends StatefulWidget {
-  const CustomerFeedback({super.key});
+  final int buttonId;
+
+  const CustomerFeedback({super.key, required this.buttonId});
+
   @override
   _FeedbackPageState createState() => _FeedbackPageState();
 }
@@ -22,9 +25,12 @@ class _FeedbackPageState extends State<CustomerFeedback> {
   
   List<Map<String, dynamic>> _departments = [];
   int? _selectedDepartment;
+  int _currentPage = 0;
   
   List<Map<String, dynamic>> _questions = [];
+  List<Map<String, dynamic>> filteredQuestions = [];
   Map<int, double> _ratings = {}; 
+  
   
   TextEditingController CustomerNameController = TextEditingController();
 
@@ -33,6 +39,7 @@ class _FeedbackPageState extends State<CustomerFeedback> {
     super.initState();
     _fetchQuestions();
     _fetchDepartments();
+    _selectedDepartment = widget.buttonId;
   }
   
   Future<void> _fetchDepartments() async {
@@ -68,7 +75,7 @@ class _FeedbackPageState extends State<CustomerFeedback> {
           setState(() {
             _questions.clear(); 
             _questions = List<Map<String, dynamic>>.from(data);
-            _ratings = {for (var question in _questions) question['question_id']: 4.5};
+            filterQuestionsByDepartment();
           });
 
         } else {
@@ -80,6 +87,16 @@ class _FeedbackPageState extends State<CustomerFeedback> {
     } catch (e) {
       print("Error fetching questions data: $e");
     }
+  }
+
+  void filterQuestionsByDepartment() {
+    filteredQuestions = _questions
+        .where((q) => q['department_id'] == 0 || q['department_id'] == _selectedDepartment)
+        .toList();
+    setState(() {
+      _ratings = {for (var question in _questions) question['question_id']: 4.5};
+  
+    });
   }
 
   Future<void> submitFeedback() async {
@@ -174,6 +191,7 @@ class _FeedbackPageState extends State<CustomerFeedback> {
   }
   @override
   Widget build(BuildContext context) {
+    final int totalPages = filteredQuestions.length + 1;
     double screenWidth = MediaQuery.of(context).size.width;
     double containerWidth = screenWidth * (screenWidth < 700?  1 : 0.8);
     double containerHeight = MediaQuery.of(context).size.height * 0.9;
@@ -202,12 +220,12 @@ class _FeedbackPageState extends State<CustomerFeedback> {
         child: Container(
           width: containerWidth,
           height: containerHeight,
-          // color: Colors.red,
           padding: EdgeInsets.all(0),
-          child: Column(
+          child: ResponsiveBreakpoints.of(context).smallerThan(DESKTOP) ?
+          Column(
             children: [
               Expanded(
-                child: _questions.isEmpty
+                child: filteredQuestions.isEmpty
                   ? Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -224,7 +242,7 @@ class _FeedbackPageState extends State<CustomerFeedback> {
                         mainAxisSpacing: 10,
                         childAspectRatio: 1.5,
                       ),
-                      itemCount: _questions.length + 1,
+                      itemCount: filteredQuestions.length + 1,
                       itemBuilder: (context, index) {
                         if (index == 0) {
                           return _buildCustomerNameCard();
@@ -232,7 +250,7 @@ class _FeedbackPageState extends State<CustomerFeedback> {
                           return _buildQuestionCard(
                             context,
                             index, 
-                            _questions[index - 1]['question'],
+                            filteredQuestions[index - 1]['question'],
                           );
                         }
                       },
@@ -259,11 +277,89 @@ class _FeedbackPageState extends State<CustomerFeedback> {
               ), 
     
             ],
+          )
+          : Column(
+            children: [
+              Expanded(
+                child: filteredQuestions.isEmpty
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(LucideIcons.alertCircle, size: 100),
+                          SizedBox(height: 15),
+                          Text("There is no Question Added"),
+                        ],
+                      )
+                    : Expanded(
+                        child: _currentPage == 0
+                            ? _buildCustomerNameCard()
+                            : _buildQuestionCard(
+                                context,
+                                _currentPage,
+                                filteredQuestions[_currentPage - 1]['question'],
+                              ),
+                      ),
+              ),
+              if (filteredQuestions.isNotEmpty)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    ElevatedButton(
+                      onPressed: _currentPage > 0
+                          ? () {
+                              setState(() {
+                                _currentPage--;
+                              });
+                            }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: Text("Prev", style: GoogleFonts.poppins(fontSize: 18)),
+                    ),
+                    Text("Page ${_currentPage + 1} of $totalPages"),
+                    _currentPage + 1  == totalPages ? 
+                    ElevatedButton(
+                      onPressed: () {
+                        submitFeedback();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: Text("Submit", style: GoogleFonts.poppins(fontSize: 18)),
+                    ) :
+                    ElevatedButton(
+                      onPressed: _currentPage < totalPages - 1 ? () {
+                              setState(() {
+                                _currentPage++;
+                              });
+                            }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: Text("Next", style: GoogleFonts.poppins(fontSize: 18)),
+                    )
+                  ],
+                ),
+              SizedBox(height: 10),
+              
+            ],
           ),
         ),
-      ),
+      )
     );
   }
+
   Widget _buildCustomerNameCard() {
     double screenWidth = MediaQuery.of(context).size.width;
     double fontSize = screenWidth < 600 ? 14 : 18;  
@@ -293,7 +389,7 @@ class _FeedbackPageState extends State<CustomerFeedback> {
             ),
             SizedBox(height: 5),
             Container(
-              width: screenWidth * 0.8,  // Make the text field responsive
+              width: screenWidth * 0.8,  
               height: inputHeight,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
@@ -347,6 +443,7 @@ class _FeedbackPageState extends State<CustomerFeedback> {
                   onChanged: (int? value) {
                     setState(() {
                       _selectedDepartment = value!;
+                      filterQuestionsByDepartment();
                     });
                   },
                 ),
@@ -361,9 +458,9 @@ class _FeedbackPageState extends State<CustomerFeedback> {
   
   Widget _buildQuestionCard(BuildContext context, int index, String question) {
     var screenType = ResponsiveBreakpoints.of(context).breakpoint.name;
-  
-  double questionTitleFont = screenType == MOBILE ? 0.05 : 0.037 ;
-  double questionFont = screenType == MOBILE ? 0.046 : 0.03 ; 
+    double questionTitleFont = screenType == MOBILE ? 0.05 : 0.037 ;
+    double ratingFont = screenType == MOBILE ? 0.046 : 0.04 ; 
+    double questionFont = screenType == MOBILE ? 0.046 : 0.070 ; 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Container(
@@ -385,7 +482,8 @@ class _FeedbackPageState extends State<CustomerFeedback> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: Container(
+                child: 
+                Container(
                   width: double.infinity,
                   padding: EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -424,7 +522,7 @@ class _FeedbackPageState extends State<CustomerFeedback> {
                               Text(
                                 "${_ratings[index]}/5",
                                 style: GoogleFonts.poppins(
-                                  fontSize: screenWidth * questionFont,
+                                  fontSize: screenWidth * ratingFont,
                                   fontWeight: FontWeight.bold,
                                 ),
                               )
@@ -446,7 +544,7 @@ class _FeedbackPageState extends State<CustomerFeedback> {
                                           child: Text(
                                             question,
                                             style: GoogleFonts.poppins(
-                                              fontSize: screenWidth * questionFont,
+                                              fontSize: availableHeight * questionFont,
                                               fontWeight: FontWeight.bold,
                                             ),
                                             textAlign: TextAlign.center,
@@ -455,7 +553,7 @@ class _FeedbackPageState extends State<CustomerFeedback> {
                                         ),
                                         SizedBox(height: 10,),
                                         RatingBar(
-                                          iconSize: availableHeight * 0.2,
+                                          iconSize: availableHeight * 0.18,
                                           allowHalfRating: true,
                                           filledIcon: Icons.star,
                                           halfFilledIcon: Icons.star_half,
@@ -488,4 +586,6 @@ class _FeedbackPageState extends State<CustomerFeedback> {
       ),
     );
   }
+
+
 }

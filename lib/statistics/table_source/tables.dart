@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 
     
-    double _getAverageFeedback(List data, int departmentId) {
-      double total = 0.0;
-      int count = 0;
+  double _getAverageFeedback(List data, int departmentId) {
+    double total = 0.0;
+    int count = 0;
 
-      for (var item in data) {
-        if (item['average_feedback'] != null) {
-          if (item['department_id'] == departmentId) {
-            total += double.tryParse(item['average_feedback'].toString()) ?? 0.0;
-            count++;
-          }
+    for (var item in data) {
+      if (item['average_feedback'] != null) {
+        if (item['department_id'] == departmentId) {
+          total += double.tryParse(item['average_feedback'].toString()) ?? 0.0;
+          count++;
         }
       }
-
-      return count > 0 ? ((total / count) * 100).round() / 100.0 : 0.0;
     }
+
+    return count > 0 ? ((total / count) * 100).round() / 100.0 : 0.0;
+  }
 
 
 
@@ -145,7 +145,18 @@ class FeedbackDataSource extends DataTableSource {
       index: index,
       cells: [
         DataCell(Center(child: Text(row['button_name'].toString(), style: TextStyle(fontSize: font)))),
-        DataCell(Center(child: Text("Question ${row['question_id']}", style: TextStyle(fontSize: font)))),
+        DataCell(
+          Center(
+            child: Tooltip(
+              message: row['question'].toString(),
+              child: Text(
+                "Question ${row['question_id']}",
+                style: TextStyle(fontSize: font,),
+                softWrap: true
+              ),
+            ),
+          ),
+        ),
         DataCell(Center(child: Text(row['feedback_count'].toString(), style: TextStyle(fontSize: font)))),
         DataCell(Center(child: Text(row['average_feedback']?.toString() ?? 'N/A', style: TextStyle(fontSize: font)))),
       ],

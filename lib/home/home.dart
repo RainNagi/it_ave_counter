@@ -22,7 +22,6 @@ class _MyHomePageState extends State<MyHomePage> {
   final Map<String, IconData> _iconMap = IconDictionary.icons;
   String username = "User"; 
   List<Map<String, dynamic>> departments = [];
-  Map<String, bool> isButtonDisabled = {};
 
   @override
   void initState(){
@@ -35,9 +34,6 @@ class _MyHomePageState extends State<MyHomePage> {
     List<Map<String, dynamic>> fetchedDepartments = await fetchDepartments();
     setState(() {
       departments = fetchedDepartments;
-      isButtonDisabled = {
-        for (var department in departments) department["button_name"] as String: false
-      };
     });
   }
 
@@ -46,154 +42,6 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       username = prefs.getString("uname") ?? "User";
     });
-  }
-
-  Widget _buildCounterCard(String title, String count, String icon, int buttonId) {
-    
-    double buttonFontSize = 16;
-    double titleFontSize = 18;
-    double counterFontSize = 30;
-    double visitorFont = 10;
-    // var screenType = ResponsiveBreakpoints.of(context).breakpoint.name;
-    // double buttonFontSize;
-    // double titleFontSize;
-    // double counterFontSize;
-    // double visitorFont;
-
-    // if (screenType == MOBILE) {
-    //   buttonFontSize = 10;
-    //   titleFontSize = 12;
-    //   counterFontSize = 20;
-    //   visitorFont = 10;
-    // } else {
-    //   buttonFontSize = 16;
-    //   titleFontSize = 18;
-    //   counterFontSize = 30;
-    //   visitorFont = 10;
-    // }
-
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Container(
-        padding: EdgeInsets.all(0),
-        decoration: BoxDecoration(
-          border: Border.all(color: Color.fromARGB(91, 0, 0, 0)),
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: InkWell(
-          onTap: isButtonDisabled[title]! ? null : () {incrementCounter(title,buttonId,context, loadDepartments);},
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Container(
-                  padding: EdgeInsets.all(0),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(15),
-                      topRight: Radius.circular(15),
-                    ),
-                    color: Colors.white,
-                  ),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      double screenWidth = constraints.maxWidth;
-                      return Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(title,
-                                        style: GoogleFonts.poppins(
-                                          fontSize: titleFontSize, 
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        textAlign: TextAlign.justify,
-                                        softWrap: true,
-                                      ),
-                                      Container(width: 30, height: 2, color: Color.fromRGBO(111, 5, 6, 1)),
-                                    ],
-                                  ),
-                                ),
-                                SizedBox(width: screenWidth * 0.05),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(count,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: counterFontSize, 
-                                        color: Colors.black, 
-                                        fontWeight: FontWeight.bold
-                                      ),
-                                      textAlign: TextAlign.center
-                                    ),
-                                    Text('Visitors',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: visitorFont,
-                                        color: Colors.grey[700]
-                                      ), 
-                                      textAlign: TextAlign.center
-                                    ),
-                                  ],
-                                )
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                double availableHeight = constraints.maxHeight; // Get dynamic height
-
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    SizedBox(height: availableHeight * 0.1), // Responsive spacing
-                                    Icon(_iconMap[icon], size: availableHeight * 0.5, color: Color.fromRGBO(151, 81, 2, 1)), // Scale icon size
-                                    SizedBox(height: availableHeight * 0.05), // Responsive spacing
-                                  ],
-                                );
-                              },
-                            ),
-                          )
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: isButtonDisabled[title]! ? null : () { incrementCounter(title, buttonId, context, loadDepartments);},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color.fromRGBO(53, 53, 63, 1),
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(15),
-                      bottomRight: Radius.circular(15),
-                    ),
-                  ),
-                ),
-                child: Center(
-                  child: Text("$title Visitor", style: GoogleFonts.poppins(fontSize: buttonFontSize), textAlign: TextAlign.center),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
   }
 
   @override
@@ -211,19 +59,6 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // ResponsiveRowColumn(
-            //   layout: ResponsiveBreakpoints.of(context).smallerThan(DESKTOP)
-            //       ? ResponsiveRowColumnType.COLUMN
-            //       : ResponsiveRowColumnType.ROW,
-            //   children: [
-            //     ResponsiveRowColumnItem(
-            //       child: Expanded(child: Text("Left Section")),
-            //     ),
-            //     ResponsiveRowColumnItem(
-            //       child: Expanded(child: Text("Right Section")),
-            //     ),
-            //   ],
-            // ),
             ClipOval(
               child: Container(
                 color: Colors.white,
@@ -326,32 +161,144 @@ class _MyHomePageState extends State<MyHomePage> {
                     return _buildCounterCard(
                       departments[index]["button_name"] ?? "Unknown",
                       departments[index]['counter_count']?.toString() ?? "0",
-                      departments[index]["button_icon"] ?? "default_icon",
+                      departments[index]["button_icon"] ?? "lucide_plus_circle",
                       departments[index]["button_id"] ?? 0,
                     );
                   },
                 ),
               ), 
               SizedBox(height: 20),
-              Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        goToCustomerFeedBack(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      child: Text("Feedback", style: GoogleFonts.poppins(fontSize: screenType == MOBILE? 10 : 18 )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  
+  Widget _buildCounterCard(String title, String count, String icon, int buttonId) {
+    double buttonFontSize = 16;
+    double titleFontSize = 18;
+    double counterFontSize = 30;
+    double visitorFont = 10;
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Container(
+        padding: EdgeInsets.all(0),
+        decoration: BoxDecoration(
+          border: Border.all(color: Color.fromARGB(91, 0, 0, 0)),
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: InkWell(
+          onTap: () async {incrementCounter(title,buttonId,context, loadDepartments);},
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.all(0),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(15),
+                      topRight: Radius.circular(15),
                     ),
-                  ],
-                )
-              ),     
+                    color: Colors.white,
+                  ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      double screenWidth = constraints.maxWidth;
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(title,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: titleFontSize, 
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        textAlign: TextAlign.justify,
+                                        softWrap: true,
+                                      ),
+                                      Container(width: 30, height: 2, color: Color.fromRGBO(111, 5, 6, 1)),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(width: screenWidth * 0.05),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(count,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: counterFontSize, 
+                                        color: Colors.black, 
+                                        fontWeight: FontWeight.bold
+                                      ),
+                                      textAlign: TextAlign.center
+                                    ),
+                                    Text('Visitors',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: visitorFont,
+                                        color: Colors.grey[700]
+                                      ), 
+                                      textAlign: TextAlign.center
+                                    ),
+                                  ],
+                                )
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                double availableHeight = constraints.maxHeight; 
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(height: availableHeight * 0.1), 
+                                    Icon(_iconMap[icon], size: availableHeight * 0.5, color: Color.fromRGBO(151, 81, 2, 1)), // Scale icon size
+                                    SizedBox(height: availableHeight * 0.05),
+                                  ],
+                                );
+                              },
+                            ),
+                          )
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  goToCustomerFeedBack(context, buttonId);
+                },
+                style: ElevatedButton.styleFrom(
+                  
+                  backgroundColor: Color.fromRGBO(53, 53, 63, 1),
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(15),
+                      bottomRight: Radius.circular(15),
+                    ),
+                  ),
+                ),
+                child: Center(
+                  child: Text("$title Feedback", style: GoogleFonts.poppins(fontSize: buttonFontSize), textAlign: TextAlign.center),
+                ),
+              ),
             ],
           ),
         ),

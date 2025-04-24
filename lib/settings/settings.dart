@@ -10,7 +10,7 @@ import 'package:flutter/cupertino.dart';
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../home/home.dart';
-import 'common/widget_cards.dart';
+import 'widgets/widget_cards.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -646,7 +646,6 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ],
                   )
-                  
                 ],
               ),
             ),
@@ -706,9 +705,21 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: Column(
                     children: [                      
                       _selectedDepartment != 0 
-                        ? buttonCard(context, _departments, _selectedDepartment, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon) 
+                        ? buttonCard(context, _departments, _selectedDepartment, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon, 
+                            (String newIcon) {
+                              setState(() {
+                                _selectedIcon = newIcon;
+                              });
+                            },
+                          ) 
                         : 
-                        buttonCard(context,_departments, 0, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon),
+                        buttonCard(context,_departments, 0, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon, 
+                            (String newIcon) {
+                              setState(() {
+                                _selectedIcon = newIcon;
+                              });
+                            },
+                          ),
                       _isAddingDepartment || _isEditingDepartment?
                       SizedBox(
                         width: 150,
@@ -923,8 +934,20 @@ class _SettingsPageState extends State<SettingsPage> {
               height: 300,
               child:                   
                 _selectedDepartment != 0 
-                  ? buttonCard(context,_departments, _selectedDepartment, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon) 
-                  : buttonCard(context,_departments, 0, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon),
+                  ? buttonCard(context,_departments, _selectedDepartment, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon, 
+                      (String newIcon) {
+                        setState(() {
+                          _selectedIcon = newIcon;
+                        });
+                      },
+                    )  
+                  : buttonCard(context,_departments, 0, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon, 
+                      (String newIcon) {
+                        setState(() {
+                          _selectedIcon = newIcon;
+                        });
+                      },
+                    )
             ),
             SizedBox(height: 10,),
             _isAddingDepartment || _isEditingDepartment ?
@@ -1153,8 +1176,20 @@ class _SettingsPageState extends State<SettingsPage> {
               height: 200,
               child:                   
                 _selectedDepartment != 0 
-                  ? buttonCard(context,_departments, _selectedDepartment, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon) 
-                  : buttonCard(context,_departments, 0, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon),
+                  ? buttonCard(context,_departments, _selectedDepartment, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon, 
+                            (String newIcon) {
+                              setState(() {
+                                _selectedIcon = newIcon;
+                              });
+                            },
+                          ) 
+                  : buttonCard(context,_departments, 0, _isAddingDepartment, _isEditingDepartment, departmentNameController, _selectedIcon, 
+                            (String newIcon) {
+                              setState(() {
+                                _selectedIcon = newIcon;
+                              });
+                            },
+                          )
             ),
             SizedBox(height: 10,),
             _isAddingDepartment || _isEditingDepartment ?
@@ -1382,60 +1417,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ],
               ),
             ),
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(10),
-              child: _departments.isEmpty
-                ? Text("None")
-                : DropdownButton<String>(
-                    value: _selectedDepartmentInQuestion == -1
-                        ? "General Question"
-                        : _departments[_selectedDepartmentInQuestion]["button_name"],
-                    onChanged: (String? newValue) {
-                      if (newValue != null) {
-                        setState(() {
-                          _selectedQuestion = 0;
-                          if (newValue == "General Question") {
-                            _selectedDepartmentInQuestion = -1;
-                          } else {
-                            _selectedDepartmentInQuestion = _departments.indexWhere(
-                              (dept) => dept["button_name"] == newValue,
-                            );
-                          }
-                          filterQuestionsByDepartment(); 
-                        });
-                      }
-                    },
-                    items: [
-                      DropdownMenuItem(
-                        value: "General Question",
-                        child: Text(
-                          "General Question",
-                          style: GoogleFonts.poppins(
-                            color: Colors.black,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          softWrap: true,
-                        ),
-                      ),
-                      ..._departments.map((dept) {
-                        return DropdownMenuItem(
-                          value: dept["button_name"].toString(),
-                          child: Text(
-                            dept["button_name"].toString(),
-                            style: GoogleFonts.poppins(
-                              color: Colors.black,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            softWrap: true,
-                          ),
-                        );
-                      }).toList(),
-                    ],
-                  ),
-            ),
+            
             SizedBox(height: 10),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 5),
@@ -1518,7 +1500,61 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
             ),
-            
+            SizedBox(height: 10,),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(10),
+              child: _departments.isEmpty
+                ? Text("None")
+                : DropdownButton<String>(
+                    value: _selectedDepartmentInQuestion == -1
+                        ? "General Question"
+                        : _departments[_selectedDepartmentInQuestion]["button_name"],
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          _selectedQuestion = 0;
+                          if (newValue == "General Question") {
+                            _selectedDepartmentInQuestion = -1;
+                          } else {
+                            _selectedDepartmentInQuestion = _departments.indexWhere(
+                              (dept) => dept["button_name"] == newValue,
+                            );
+                          }
+                          filterQuestionsByDepartment(); 
+                        });
+                      }
+                    },
+                    items: [
+                      DropdownMenuItem(
+                        value: "General Question",
+                        child: Text(
+                          "General Question",
+                          style: GoogleFonts.poppins(
+                            color: Colors.black,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          softWrap: true,
+                        ),
+                      ),
+                      ..._departments.map((dept) {
+                        return DropdownMenuItem(
+                          value: dept["button_name"].toString(),
+                          child: Text(
+                            dept["button_name"].toString(),
+                            style: GoogleFonts.poppins(
+                              color: Colors.black,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            softWrap: true,
+                          ),
+                        );
+                      }).toList(),
+                    ],
+                  ),
+            ),
             SizedBox(height: 10,),
             Expanded(
               child: SizedBox(
@@ -1672,60 +1708,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
               SizedBox(height: 10),
-              Container(
-                width: 300,
-                padding: EdgeInsets.all(10),
-                child:  _departments.isEmpty
-                  ? Text("")
-                  : DropdownButton<String>(
-                      value: _selectedDepartmentInQuestion == -1
-                          ? "General Question"
-                          : _departments[_selectedDepartmentInQuestion]["button_name"],
-                      onChanged: (String? newValue) {
-                        if (newValue != null) {
-                          setState(() {
-                            _selectedQuestion = 0;
-                            if (newValue == "General Question") {
-                              _selectedDepartmentInQuestion = -1;
-                            } else {
-                              _selectedDepartmentInQuestion = _departments.indexWhere(
-                                (dept) => dept["button_name"] == newValue,
-                              );
-                            }
-                            filterQuestionsByDepartment(); // if you're using the filter function
-                          });
-                        }
-                      },
-                      items: [
-                        DropdownMenuItem(
-                          value: "General Question",
-                          child: Text(
-                            "General Question",
-                            style: GoogleFonts.poppins(
-                              color: Colors.black,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            softWrap: true,
-                          ),
-                        ),
-                        ..._departments.map((dept) {
-                          return DropdownMenuItem(
-                            value: dept["button_name"].toString(),
-                            child: Text(
-                              dept["button_name"].toString(),
-                              style: GoogleFonts.poppins(
-                                color: Colors.black,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              softWrap: true,
-                            ),
-                          );
-                        }).toList(),
-                      ],
-                    ),
-              ),
+              
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 70),
                 height: 300,
@@ -1806,6 +1789,62 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                   ),
                 ),
+              ),
+              
+              SizedBox(height: 10,),
+              Container(
+                width: 300,
+                padding: EdgeInsets.all(10),
+                child:  _departments.isEmpty
+                  ? Text("")
+                  : DropdownButton<String>(
+                      value: _selectedDepartmentInQuestion == -1
+                          ? "General Question"
+                          : _departments[_selectedDepartmentInQuestion]["button_name"],
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            _selectedQuestion = 0;
+                            if (newValue == "General Question") {
+                              _selectedDepartmentInQuestion = -1;
+                            } else {
+                              _selectedDepartmentInQuestion = _departments.indexWhere(
+                                (dept) => dept["button_name"] == newValue,
+                              );
+                            }
+                            filterQuestionsByDepartment(); // if you're using the filter function
+                          });
+                        }
+                      },
+                      items: [
+                        DropdownMenuItem(
+                          value: "General Question",
+                          child: Text(
+                            "General Question",
+                            style: GoogleFonts.poppins(
+                              color: Colors.black,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            softWrap: true,
+                          ),
+                        ),
+                        ..._departments.map((dept) {
+                          return DropdownMenuItem(
+                            value: dept["button_name"].toString(),
+                            child: Text(
+                              dept["button_name"].toString(),
+                              style: GoogleFonts.poppins(
+                                color: Colors.black,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              softWrap: true,
+                            ),
+                          );
+                        }).toList(),
+                      ],
+                    ),
               ),
               SizedBox(height: 10,),
               
